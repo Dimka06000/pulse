@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { AppHeader } from '@/components/pulse/app-header';
 import { StatCard } from '@/components/pulse/stat-card';
 import { Button } from '@/components/pulse/button';
@@ -14,12 +15,20 @@ import Link from 'next/link';
 import { WorkoutSuggestionCard } from '@/components/pulse/workout-suggestion';
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { userId } = useAuthStore();
   const [stats, setStats] = useState<any>(null);
   const [streak, setStreak] = useState<any>(null);
   const [soloSessions, setSoloSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+
+  // Redirect to onboarding if not completed
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !localStorage.getItem('pulse_onboarded')) {
+      router.push('/onboarding');
+    }
+  }, [router]);
 
   const fetchData = useCallback(() => {
     if (!userId) return;
