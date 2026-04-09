@@ -10,7 +10,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
-      '@oikos/coaching': path.resolve(__dirname, '../coaching/src'),
+      '@oikos/coaching': path.resolve(__dirname, 'coaching-src'),
+      '@oikos/core': path.resolve(__dirname, 'src/lib/stubs/oikos-core.ts'),
     },
   },
 });

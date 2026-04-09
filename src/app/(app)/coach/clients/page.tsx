@@ -50,7 +50,7 @@ export default function ClientsPage() {
           {clients.map((client) => (
             <a
               key={client.id}
-              href={`/clients/${client.id}`}
+              href={`/coach/clients/${client.id}`}
               className="flex items-center justify-between rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
             >
               <div className="flex items-center gap-4">

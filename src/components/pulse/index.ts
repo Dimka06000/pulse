@@ -16,3 +16,7 @@ export { JournalEntryForm } from './journal-entry';
 export { FeedCard } from './feed-card';
 export { ChallengeCard } from './challenge-card';
 export { PushToDevice } from './push-to-device';
+export { ActivityRings } from './activity-rings';
+export { AuthProvider } from './auth-provider';
+export { CreateSessionModal } from './create-session-modal';
+export { StreakBadge } from './streak-badge';

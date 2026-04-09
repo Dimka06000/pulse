@@ -7,12 +7,8 @@ const config: NextConfig = {
     ignoreBuildErrors: true,
   },
   webpack: (config) => {
-    // Resolve @oikos/coaching to local source (for Vercel standalone deploy)
-    // Try local monorepo path first, then bundled copy for Vercel
-    const fs = require('fs');
-    const monorepoPath = path.resolve(__dirname, '../coaching/src');
-    const bundledPath = path.resolve(__dirname, 'coaching-src');
-    config.resolve.alias['@oikos/coaching'] = fs.existsSync(monorepoPath) ? monorepoPath : bundledPath;
+    // Resolve @oikos/coaching to local bundled copy (standalone, no monorepo)
+    config.resolve.alias['@oikos/coaching'] = path.resolve(__dirname, 'coaching-src');
     config.resolve.alias['@oikos/core'] = path.resolve(__dirname, 'src/lib/stubs/oikos-core.ts');
     // Resolve .js imports to .ts source files
     config.resolve.extensionAlias = {
