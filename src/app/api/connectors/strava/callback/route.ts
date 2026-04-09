@@ -62,6 +62,7 @@ export async function GET(req: NextRequest) {
       console.error('Initial Strava sync failed:', syncErr);
     }
 
+    // Strava webhook will handle future auto-sync — no polling needed
     return NextResponse.redirect(new URL('/profile/connections?connected=strava', req.url));
   } catch (err) {
     console.error('Strava callback error:', err);
