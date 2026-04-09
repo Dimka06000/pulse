@@ -82,27 +82,32 @@ const allUsers = [
 
 const userIds = {};
 
-for (const u of allUsers) {
-  // Try to create; if exists, fetch by email
-  const { data: created, error } = await supabase.auth.admin.createUser({
-    email: u.email,
-    password: u.password,
-    email_confirm: true,
-    user_metadata: { full_name: `${u.first_name} ${u.last_name}`, role: u.role },
-  });
+// Pre-fetch all existing users
+const { data: existingUsersData } = await supabase.auth.admin.listUsers({ page: 1, perPage: 100 });
+const existingUsersMap = {};
+for (const u of existingUsersData?.users || []) {
+  existingUsersMap[u.email] = u.id;
+}
 
-  if (created?.user) {
-    userIds[u.email] = created.user.id;
-    log('CREATED', `User ${u.email} → ${created.user.id}`);
+for (const u of allUsers) {
+  // Check if user already exists
+  if (existingUsersMap[u.email]) {
+    userIds[u.email] = existingUsersMap[u.email];
+    log('EXISTS', `User ${u.email} → ${existingUsersMap[u.email]}`);
   } else {
-    // User exists — find their ID
-    const { data: { users } } = await supabase.auth.admin.listUsers({ filter: `email.eq.${u.email}`, perPage: 1 });
-    const existing = users?.find(x => x.email === u.email);
-    if (existing) {
-      userIds[u.email] = existing.id;
-      log('EXISTS', `User ${u.email} → ${existing.id}`);
+    // Create new user
+    const { data: created, error } = await supabase.auth.admin.createUser({
+      email: u.email,
+      password: u.password,
+      email_confirm: true,
+      user_metadata: { full_name: `${u.first_name} ${u.last_name}`, role: u.role },
+    });
+
+    if (created?.user) {
+      userIds[u.email] = created.user.id;
+      log('CREATED', `User ${u.email} → ${created.user.id}`);
     } else {
-      warn('auth', `Cannot find/create ${u.email}: ${error?.message}`);
+      warn('auth', `Cannot create ${u.email}: ${error?.message}`);
       continue;
     }
   }
