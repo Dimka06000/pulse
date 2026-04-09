@@ -42,13 +42,13 @@ export default function OnboardingPage() {
     if (!userId || sports.length === 0) return;
     setSaving(true);
     try {
-      const supabase = getSupabaseBrowserClient();
-      await supabase
-        .from('profiles')
-        .update({ sports_practiced: sports })
-        .eq('id', userId);
+      await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sports_practiced: sports }),
+      });
     } catch {
-      // silent — non-blocking
+      // non-blocking — continue onboarding even if save fails
     }
     setSaving(false);
   }, [userId, sports]);
@@ -59,26 +59,35 @@ export default function OnboardingPage() {
     setSaving(true);
     try {
       const preset = GOAL_PRESETS.find((g) => g.id === selectedGoal);
-      if (!preset) return;
+      if (!preset) { setSaving(false); return; }
 
       const title = selectedGoal === 'custom' ? customTitle : preset.title;
-      const target = selectedGoal === 'custom' ? customTarget : preset.target;
-      if (!title) return;
+      const targetStr = selectedGoal === 'custom' ? customTarget : preset.target;
+      if (!title) { setSaving(false); return; }
 
-      const supabase = getSupabaseBrowserClient();
-      await supabase.from('goals').insert({
-        user_id: userId,
-        title,
-        target_value: target,
-        status: 'active',
+      const targetNum = parseFloat(targetStr) || 10;
+      await fetch('/api/goals', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          type: selectedGoal === 'run5k' ? 'performance' : selectedGoal === '10sessions' ? 'frequency' : 'custom',
+          target_value: targetNum,
+          unit: selectedGoal === 'run5k' ? 'km' : selectedGoal === '10sessions' ? 'séances' : '',
+        }),
       });
     } catch {
-      // silent
+      // non-blocking
     }
     setSaving(false);
   }, [userId, selectedGoal, customTitle, customTarget]);
 
   /* ─── Step navigation ─── */
+  function skip() {
+    localStorage.setItem('pulse_onboarded', 'true');
+    router.push('/dashboard');
+  }
+
   async function next() {
     if (step === 1) await saveSports();
     if (step === 2) await saveGoal();
