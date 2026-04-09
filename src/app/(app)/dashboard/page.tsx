@@ -11,6 +11,7 @@ import { useAuthStore } from '@/stores/auth';
 import { SPORT_EMOJIS } from '@/lib/sports';
 import type { Sport } from '@/lib/sports';
 import Link from 'next/link';
+import { WorkoutSuggestionCard } from '@/components/pulse/workout-suggestion';
 
 export default function DashboardPage() {
   const { userId } = useAuthStore();
@@ -172,6 +173,12 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
+
+        {/* Insight du jour */}
+        <div>
+          <h2 className="mb-3 text-sm font-bold text-text">Insight du jour</h2>
+          <WorkoutSuggestionCard compact />
+        </div>
       </div>
 
       <CreateSessionModal

@@ -13,6 +13,7 @@ const athleteNav: NavItem[] = [
   { href: '/goals', icon: '🎯', label: 'Objectifs' },
   { href: '/nutrition', icon: '🥗', label: 'Nutrition' },
   { href: '/journal', icon: '📓', label: 'Journal' },
+  { href: '/insights', icon: '🧠', label: 'Insights' },
 ];
 
 const exploreNav: NavItem[] = [
