@@ -1,0 +1,4 @@
+{
+  "installCommand": "sed -i '/@oikos\\/coaching/d' package.json && npm install --legacy-peer-deps react-is",
+  "framework": "nextjs"
+}

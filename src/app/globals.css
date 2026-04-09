@@ -1,0 +1,48 @@
+@import 'tailwindcss';
+
+@theme {
+  /* ─── Fonts ─── */
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Cormorant Garamond', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* ─── Semantic Colors ─── */
+  --color-bg: #ffffff;
+  --color-surface: #f8fafc;
+  --color-text: #0f172a;
+  --color-muted: #64748b;
+  --color-border: #e2e8f0;
+
+  /* ─── Brand (Green) ─── */
+  --color-brand-50: #f0fdf4;
+  --color-brand-100: #dcfce7;
+  --color-brand-200: #bbf7d0;
+  --color-brand-300: #86efac;
+  --color-brand-400: #4ade80;
+  --color-brand-500: #22c55e;
+  --color-brand-600: #16a34a;
+  --color-brand-700: #15803d;
+  --color-brand-800: #166534;
+  --color-brand-900: #14532d;
+
+  /* ─── Semantic ─── */
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+  --color-info: #3b82f6;
+
+  /* ─── Accents ─── */
+  --color-indigo-500: #6366f1;
+  --color-indigo-600: #4f46e5;
+  --color-violet-500: #8b5cf6;
+  --color-cyan-500: #06b6d4;
+  --color-pink-500: #ec4899;
+  --color-orange-500: #f97316;
+
+  /* ─── Shadows ─── */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-glow-green: 0 4px 14px rgba(34, 197, 94, 0.3);
+  --shadow-glow-red: 0 4px 14px rgba(239, 68, 68, 0.3);
+}

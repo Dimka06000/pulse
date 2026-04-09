@@ -1,0 +1,61 @@
+{
+  "name": "@oikos/coaching",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./types": {
+      "import": "./dist/types.js",
+      "types": "./dist/types.d.ts"
+    },
+    "./hierarchy": {
+      "import": "./dist/hierarchy.js",
+      "types": "./dist/hierarchy.d.ts"
+    },
+    "./collaboration": {
+      "import": "./dist/collaboration.js",
+      "types": "./dist/collaboration.d.ts"
+    },
+    "./endorsement": {
+      "import": "./dist/endorsement.js",
+      "types": "./dist/endorsement.d.ts"
+    },
+    "./ratings": {
+      "import": "./dist/ratings.js",
+      "types": "./dist/ratings.d.ts"
+    },
+    "./tracking": {
+      "import": "./dist/tracking.js",
+      "types": "./dist/tracking.d.ts"
+    },
+    "./nutrition": {
+      "import": "./dist/nutrition.js",
+      "types": "./dist/nutrition.d.ts"
+    },
+    "./training": {
+      "import": "./dist/training.js",
+      "types": "./dist/training.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@oikos/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@supabase/supabase-js": "^2.102.1",
+    "@types/node": "^25.5.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

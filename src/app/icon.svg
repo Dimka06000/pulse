@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="pulse-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22c55e"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#pulse-grad)"/>
+  <path d="M96 272 h72 l40 -120 l56 200 l48 -160 l40 80 h64"
+        stroke="white" stroke-width="36" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

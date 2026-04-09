@@ -1,0 +1,101 @@
+
+> @oikos/coaching@0.1.0 build C:\Users\dimit\OneDrive\Documents\Projets et Entreprises\Projets perso\Coding\OIKOS\packages\coaching
+> tsc -p tsconfig.build.json
+
+src/commission.ts(64,5): error TS2532: Object is possibly 'undefined'.
+src/nutrition.ts(36,30): error TS2339: Property 'coach' does not exist on type 'never'.
+src/nutrition.ts(43,16): error TS2339: Property 'id' does not exist on type 'never'.
+src/nutrition.ts(44,18): error TS2339: Property 'goal' does not exist on type 'never'.
+src/nutrition.ts(45,27): error TS2339: Property 'daily_calories' does not exist on type 'never'.
+src/nutrition.ts(46,20): error TS2339: Property 'macros' does not exist on type 'never'.
+src/nutrition.ts(47,19): error TS2339: Property 'meals' does not exist on type 'never'.
+src/nutrition.ts(49,24): error TS2339: Property 'vivo_sync_id' does not exist on type 'never'.
+src/nutrition.ts(50,23): error TS2339: Property 'created_at' does not exist on type 'never'.
+src/nutrition.ts(51,23): error TS2339: Property 'updated_at' does not exist on type 'never'.
+src/nutrition.ts(82,6): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: string; }, never, never, null, "nutrition_plans", never, "POST">', gave the following error.
+    Argument of type '{ user_id: string; coach_id: string | null; goal: string; daily_calories: number; macros: { protein: number; carbs: number; fat: number; }; meals: { name: string; time?: string; description: string; calories?: number; }[]; vivo_sync_id: string | null; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: string; }, never, never, null, "nutrition_plans", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'user_id' does not exist in type 'never[]'.
+src/nutrition.ts(121,13): error TS2345: Argument of type 'Record<string, unknown>' is not assignable to parameter of type 'never'.
+src/scheduling.ts(30,10): error TS18048: 'h' is possibly 'undefined'.
+src/scheduling.ts(30,19): error TS18048: 'm' is possibly 'undefined'.
+src/tracking.ts(47,6): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: string; }, never, never, null, "session_reports", never, "POST">', gave the following error.
+    Argument of type '{ booking_id: string; coach_notes: string; athlete_progress: { metric: string; value: number; unit: string; label: string; date: string | undefined; }[]; next_session_focus: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: string; }, never, never, null, "session_reports", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'booking_id' does not exist in type 'never[]'.
+src/tracking.ts(64,13): error TS2345: Argument of type '{ status: string; }' is not assignable to parameter of type 'never'.
+src/tracking.ts(108,24): error TS2339: Property 'client_id' does not exist on type 'never'.
+src/tracking.ts(109,23): error TS2339: Property 'profiles' does not exist on type 'never'.
+src/tracking.ts(120,11): error TS2339: Property 'status' does not exist on type 'never'.
+src/tracking.ts(121,33): error TS2339: Property 'scheduled_at' does not exist on type 'never'.
+src/tracking.ts(122,29): error TS2339: Property 'scheduled_at' does not exist on type 'never'.
+src/tracking.ts(163,16): error TS2339: Property 'first_name' does not exist on type 'never'.
+src/tracking.ts(163,36): error TS2339: Property 'last_name' does not exist on type 'never'.
+src/tracking.ts(192,11): error TS2339: Property 'status' does not exist on type 'never'.
+src/tracking.ts(193,27): error TS2339: Property 'scheduled_at' does not exist on type 'never'.
+src/tracking.ts(195,23): error TS2339: Property 'session_reports' does not exist on type 'never'.
+src/tracking.ts(220,27): error TS2339: Property 'avatar_url' does not exist on type 'never'.
+src/tracking.ts(242,19): error TS2532: Object is possibly 'undefined'.
+src/tracking.ts(243,20): error TS2532: Object is possibly 'undefined'.
+src/tracking.ts(292,9): error TS2532: Object is possibly 'undefined'.
+src/tracking.ts(292,27): error TS2532: Object is possibly 'undefined'.
+src/tracking.ts(293,14): error TS2532: Object is possibly 'undefined'.
+src/tracking.ts(293,32): error TS2532: Object is possibly 'undefined'.
+src/training.ts(27,39): error TS2339: Property 'course_id' does not exist on type 'never'.
+src/training.ts(32,40): error TS2339: Property 'id' does not exist on type 'never'.
+src/training.ts(34,13): error TS2339: Property 'id' does not exist on type 'never'.
+src/training.ts(35,16): error TS2339: Property 'title' does not exist on type 'never'.
+src/training.ts(36,22): error TS2339: Property 'description' does not exist on type 'never'.
+src/training.ts(37,19): error TS2339: Property 'category' does not exist on type 'never'.
+src/training.ts(38,26): error TS2339: Property 'duration_minutes' does not exist on type 'never'.
+src/training.ts(39,18): error TS2339: Property 'modules' does not exist on type 'never'.
+src/training.ts(40,34): error TS2339: Property 'required_for_verification' does not exist on type 'never'.
+src/training.ts(41,20): error TS2339: Property 'badge_icon' does not exist on type 'never'.
+src/training.ts(42,27): error TS2339: Property 'status' does not exist on type 'never'.
+src/training.ts(43,29): error TS2339: Property 'progress' does not exist on type 'never'.
+src/training.ts(44,37): error TS2339: Property 'completed_modules' does not exist on type 'never'.
+src/training.ts(45,30): error TS2339: Property 'started_at' does not exist on type 'never'.
+src/training.ts(46,32): error TS2339: Property 'completed_at' does not exist on type 'never'.
+src/training.ts(70,18): error TS2339: Property 'status' does not exist on type 'never'.
+src/training.ts(76,15): error TS2345: Argument of type '{ status: string; }' is not assignable to parameter of type 'never'.
+src/training.ts(77,26): error TS2339: Property 'id' does not exist on type 'never'.
+src/training.ts(88,6): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: string; }, never, never, null, "training_enrollments", never, "POST">', gave the following error.
+    Argument of type '{ course_id: string; coach_id: string; status: string; progress: number; completed_modules: never[]; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: string; }, never, never, null, "training_enrollments", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'course_id' does not exist in type 'never[]'.
+src/training.ts(131,32): error TS2339: Property 'modules' does not exist on type 'never'.
+src/training.ts(132,44): error TS2339: Property 'completed_modules' does not exist on type 'never'.
+src/training.ts(143,13): error TS2345: Argument of type '{ completed_modules: string[]; progress: number; status: string; completed_at: string | null; }' is not assignable to parameter of type 'never'.
+src/training.ts(149,26): error TS2339: Property 'id' does not exist on type 'never'.
+src/training.ts(163,21): error TS2339: Property 'required_for_verification' does not exist on type 'never'.
+src/training.ts(195,8): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(values: never, options?: { count?: "exact" | "planned" | "estimated" | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: string; }, never, never, null, "coach_pathway_progress", never, "POST">', gave the following error.
+    Argument of type '{ coach_id: string; }' is not assignable to parameter of type 'never'.
+  Overload 2 of 2, '(values: never[], options?: { count?: "exact" | "planned" | "estimated" | undefined; defaultToNull?: boolean | undefined; } | undefined): PostgrestFilterBuilder<{ PostgrestVersion: string; }, never, never, null, "coach_pathway_progress", never, "POST">', gave the following error.
+    Object literal may only specify known properties, and 'coach_id' does not exist in type 'never[]'.
+src/training.ts(209,26): error TS2339: Property 'profile_complete' does not exist on type 'never'.
+src/training.ts(210,25): error TS2339: Property 'profile_complete' does not exist on type 'never'.
+src/training.ts(216,26): error TS2339: Property 'basics_course_done' does not exist on type 'never'.
+src/training.ts(217,24): error TS2339: Property 'profile_complete' does not exist on type 'never'.
+src/training.ts(217,53): error TS2339: Property 'basics_course_done' does not exist on type 'never'.
+src/training.ts(221,49): error TS2339: Property 'endorsements_count' does not exist on type 'never'.
+src/training.ts(223,26): error TS2339: Property 'endorsements_count' does not exist on type 'never'.
+src/training.ts(224,24): error TS2339: Property 'basics_course_done' does not exist on type 'never'.
+src/training.ts(224,54): error TS2339: Property 'endorsements_count' does not exist on type 'never'.
+src/training.ts(228,47): error TS2339: Property 'completed_sessions' does not exist on type 'never'.
+src/training.ts(230,26): error TS2339: Property 'completed_sessions' does not exist on type 'never'.
+src/training.ts(231,24): error TS2339: Property 'endorsements_count' does not exist on type 'never'.
+src/training.ts(231,59): error TS2339: Property 'completed_sessions' does not exist on type 'never'.
+src/training.ts(237,26): error TS2339: Property 'is_verified' does not exist on type 'never'.
+src/training.ts(238,24): error TS2339: Property 'completed_sessions' does not exist on type 'never'.
+src/training.ts(238,61): error TS2339: Property 'is_verified' does not exist on type 'never'.
+src/training.ts(247,50): error TS2339: Property 'is_verified' does not exist on type 'never'.
+src/training.ts(248,27): error TS2339: Property 'is_verified' does not exist on type 'never'.
+src/training.ts(274,20): error TS2698: Spread types may only be created from object types.
+src/training.ts(285,13): error TS2345: Argument of type '{ is_verified: any; profile_complete?: boolean | undefined; basics_course_done?: boolean | undefined; endorsements_count?: number | undefined; completed_sessions?: number | undefined; }' is not assignable to parameter of type 'never'.
+src/training.ts(292,33): error TS2339: Property 'is_verified' does not exist on type 'never'.
+src/training.ts(295,15): error TS2345: Argument of type '{ is_verified: boolean; }' is not assignable to parameter of type 'never'.
+ ELIFECYCLE  Command failed with exit code 2.
