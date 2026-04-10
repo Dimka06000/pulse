@@ -35,15 +35,15 @@ const PROVIDERS: Provider[] = [
   { id: 'komoot', name: 'Komoot', icon: '🗺️', description: 'Trail, rando, velo, parcours', color: 'from-green-700 to-emerald-600', category: 'tracking', ready: false },
 
   // ── Watches ──
-  { id: 'garmin', name: 'Garmin Connect', icon: '⌚', description: 'Montres Garmin, GPS, metriques avancees', color: 'from-blue-600 to-cyan-600', category: 'watches', ready: false },
-  { id: 'fitbit', name: 'Fitbit', icon: '💚', description: 'Activite, sommeil, frequence cardiaque', color: 'from-teal-500 to-emerald-500', category: 'watches', ready: false },
-  { id: 'apple_health', name: 'Apple Sante', icon: '🍎', description: 'iPhone, Apple Watch, HealthKit', color: 'from-pink-500 to-red-500', category: 'watches', ready: false },
-  { id: 'samsung_health', name: 'Samsung Health', icon: '💙', description: 'Galaxy Watch, metriques sante', color: 'from-blue-500 to-indigo-600', category: 'watches', ready: false },
-  { id: 'polar', name: 'Polar Flow', icon: '❄️', description: 'Montres Polar, FC, recuperation', color: 'from-red-600 to-red-700', category: 'watches', ready: false },
-  { id: 'suunto', name: 'Suunto', icon: '🧭', description: 'Montres outdoor, trail, plongee', color: 'from-gray-800 to-gray-900', category: 'watches', ready: false },
+  { id: 'garmin', name: 'Garmin Connect', icon: '⌚', description: 'Montres Garmin, GPS, métriques avancées', color: 'from-blue-600 to-cyan-600', category: 'watches', ready: true },
+  { id: 'fitbit', name: 'Fitbit', icon: '💚', description: 'Activité, sommeil, fréquence cardiaque', color: 'from-teal-500 to-emerald-500', category: 'watches', ready: true },
+  { id: 'apple_health', name: 'Apple Santé', icon: '🍎', description: 'Nécessite l\'app native (bientôt)', color: 'from-pink-500 to-red-500', category: 'watches', ready: false },
+  { id: 'samsung_health', name: 'Samsung Health', icon: '💙', description: 'Galaxy Watch, métriques santé', color: 'from-blue-500 to-indigo-600', category: 'watches', ready: false },
+  { id: 'polar', name: 'Polar Flow', icon: '❄️', description: 'Montres Polar, FC, récupération', color: 'from-red-600 to-red-700', category: 'watches', ready: true },
+  { id: 'suunto', name: 'Suunto', icon: '🧭', description: 'Montres outdoor, trail, plongée', color: 'from-gray-800 to-gray-900', category: 'watches', ready: false },
   { id: 'coros', name: 'COROS', icon: '⚡', description: 'Montres GPS, triathlon, trail', color: 'from-orange-600 to-red-600', category: 'watches', ready: false },
-  { id: 'whoop', name: 'WHOOP', icon: '🟢', description: 'Recuperation, strain, sommeil', color: 'from-green-600 to-teal-700', category: 'watches', ready: false },
-  { id: 'oura', name: 'Oura Ring', icon: '💍', description: 'Sommeil, readiness, temperature', color: 'from-gray-700 to-gray-800', category: 'watches', ready: false },
+  { id: 'whoop', name: 'WHOOP', icon: '🟢', description: 'Récupération, strain, sommeil', color: 'from-green-600 to-teal-700', category: 'watches', ready: true },
+  { id: 'oura', name: 'Oura Ring', icon: '💍', description: 'Sommeil, readiness, température', color: 'from-gray-700 to-gray-800', category: 'watches', ready: true },
 
   // ── Apps sport ──
   { id: 'strong', name: 'Strong', icon: '💪', description: 'Musculation, suivi des charges', color: 'from-blue-600 to-indigo-700', category: 'apps', ready: false },
@@ -54,7 +54,7 @@ const PROVIDERS: Provider[] = [
   { id: 'zwift', name: 'Zwift', icon: '🌐', description: 'Cyclisme et running virtuel', color: 'from-orange-500 to-orange-700', category: 'apps', ready: false },
   { id: 'trainingpeaks', name: 'TrainingPeaks', icon: '📊', description: 'Plans d\'entrainement, TSS, CTL', color: 'from-gray-700 to-gray-800', category: 'apps', ready: false },
   { id: 'intervals_icu', name: 'intervals.icu', icon: '📈', description: 'Analytics cyclisme/triathlon', color: 'from-indigo-600 to-blue-700', category: 'apps', ready: false },
-  { id: 'notion_calendar', name: 'Google Fit', icon: '🟩', description: 'Activite, pas, calories Google', color: 'from-green-500 to-blue-500', category: 'apps', ready: false },
+  { id: 'google_fit', name: 'Google Fit', icon: '🟩', description: 'Nécessite l\'app native (bientôt)', color: 'from-green-500 to-blue-500', category: 'apps', ready: false },
 
   // ── Sante ──
   { id: 'myfitnesspal', name: 'MyFitnessPal', icon: '🥗', description: 'Nutrition, calories, macros', color: 'from-blue-500 to-blue-600', category: 'health', ready: false },
@@ -85,11 +85,13 @@ export default function ConnectionsPage() {
   const getConnection = (provider: string) =>
     connections.find((c: any) => c.provider === provider && c.is_active);
 
+  const OAUTH_PROVIDERS = ['strava', 'garmin', 'fitbit', 'polar', 'whoop', 'oura'];
+
   const handleConnect = (provider: string) => {
-    if (provider === 'strava') {
-      window.location.href = '/api/connectors/strava/connect';
+    if (OAUTH_PROVIDERS.includes(provider)) {
+      window.location.href = `/api/connectors/${provider}/connect`;
     } else {
-      toast('info', 'Bientot disponible', `L'integration ${provider} arrive prochainement.`);
+      toast('info', 'Bientôt disponible', `L'intégration ${provider} arrive prochainement.`);
     }
   };
 

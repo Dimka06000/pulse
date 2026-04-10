@@ -1,4 +1,4 @@
-export type FitnessProvider = 'strava' | 'garmin' | 'fitbit' | 'apple_health';
+export type FitnessProvider = 'strava' | 'garmin' | 'fitbit' | 'apple_health' | 'google_fit' | 'polar' | 'suunto' | 'whoop' | 'oura';
 
 export interface FitnessConnection {
   id: string;
