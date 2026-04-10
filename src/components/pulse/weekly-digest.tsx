@@ -20,7 +20,36 @@ export function WeeklyDigestCard() {
     return <div className="h-64 animate-pulse rounded-2xl bg-surface" />;
   }
 
-  if (!digest) return null;
+  if (!digest) {
+    return (
+      <div className="overflow-hidden rounded-2xl border border-border bg-white">
+        <div className="bg-gradient-to-r from-brand-500 to-cyan-500 px-5 py-4">
+          <p className="text-xs font-semibold uppercase tracking-widest text-white/70">Bilan hebdomadaire</p>
+          <p className="mt-0.5 text-lg font-bold text-white">Cette semaine</p>
+        </div>
+        <div className="p-5 space-y-5">
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div>
+              <p className="text-2xl font-extrabold text-text/20">0</p>
+              <p className="text-[11px] text-muted">Séances</p>
+            </div>
+            <div>
+              <p className="text-2xl font-extrabold text-text/20">0</p>
+              <p className="text-[11px] text-muted">Minutes</p>
+            </div>
+            <div>
+              <p className="text-2xl font-extrabold text-text/20">0</p>
+              <p className="text-[11px] text-muted">Jours de suite</p>
+            </div>
+          </div>
+          <div className="rounded-xl bg-gradient-to-r from-brand-500/5 to-cyan-500/5 border border-brand-500/15 px-4 py-3">
+            <p className="text-xs font-semibold text-brand-500 mb-1">💡 Conseil</p>
+            <p className="text-sm text-text">Enregistrez votre première séance pour générer votre bilan hebdomadaire.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const sessionsTrend = digest.vsLastWeek.sessions;
   const minutesTrend = digest.vsLastWeek.minutes;

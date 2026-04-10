@@ -56,7 +56,13 @@ export function CoachPublicProfile({ coachId }: { coachId: string }) {
       .finally(() => setLoading(false));
   }, [coachId]);
 
-  if (loading) return <div className="animate-pulse text-gray-400">Chargement...</div>;
+  if (loading) return (
+    <div className="space-y-4 p-4">
+      <div className="h-10 w-48 animate-pulse rounded-2xl bg-surface" />
+      <div className="h-32 w-full animate-pulse rounded-2xl bg-surface" />
+      <div className="h-24 w-full animate-pulse rounded-2xl bg-surface" />
+    </div>
+  );
   if (error) return <div className="text-red-600">{error}</div>;
   if (!coach) return <div className="text-gray-500">Coach introuvable</div>;
 

@@ -80,10 +80,10 @@ export default function ProfilePage() {
 
           <div className="rounded-xl border border-border bg-white p-4">
             <p className="text-sm font-semibold text-text mb-1">Paramètres</p>
-            <p className="text-xs text-muted">Notifications, mode sombre (bientôt)</p>
+            <p className="text-xs text-muted">Notifications, préférences</p>
           </div>
 
-          <Button variant="danger" className="w-full" onClick={handleLogout}>
+          <Button variant="ghost" className="w-full text-muted" onClick={handleLogout}>
             Se déconnecter
           </Button>
         </div>

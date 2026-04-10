@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { AppHeader } from '@/components/pulse/app-header';
 import { Badge } from '@/components/pulse/badge';
 import { EmptyState } from '@/components/pulse/empty-state';
@@ -8,6 +8,8 @@ import { CreateSessionModal } from '@/components/pulse/create-session-modal';
 import { useAuthStore } from '@/stores/auth';
 import { SPORT_EMOJIS, SPORT_LABELS } from '@/lib/sports';
 import type { Sport } from '@/lib/sports';
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 interface PlanningItem {
   id: string;
@@ -21,12 +23,90 @@ interface PlanningItem {
   coachName?: string;
 }
 
+// Get Monday of the current week
+function getWeekStart(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = day === 0 ? -6 : 1 - day; // Monday = 1
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+// Generate 7 days starting from Monday
+function getWeekDays(weekStart: Date): Date[] {
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    return d;
+  });
+}
+
+const DAY_NAMES = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+
+function WeekCalendar({ items, weekStart }: { items: PlanningItem[]; weekStart: Date }) {
+  const days = getWeekDays(weekStart);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Build a set of day strings that have sessions
+  const sessionDays = useMemo(() => {
+    const set = new Set<string>();
+    items.forEach(item => {
+      if (item.status !== 'cancelled') {
+        const d = new Date(item.scheduled_at);
+        set.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+      }
+    });
+    return set;
+  }, [items]);
+
+  return (
+    <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
+      <div className="grid grid-cols-7 gap-1">
+        {days.map((day, i) => {
+          const isToday = day.getTime() === today.getTime();
+          const dayKey = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`;
+          const hasSession = sessionDays.has(dayKey);
+
+          return (
+            <div
+              key={i}
+              className={`flex flex-col items-center gap-1 rounded-xl py-3 px-1 transition ${
+                isToday ? 'bg-brand-500/10 ring-2 ring-brand-500' : ''
+              }`}
+            >
+              <span className={`text-[10px] font-semibold uppercase ${
+                isToday ? 'text-brand-500' : 'text-muted'
+              }`}>
+                {DAY_NAMES[i]}
+              </span>
+              <span className={`text-sm font-bold ${
+                isToday ? 'text-brand-500' : 'text-text'
+              }`}>
+                {day.getDate()}
+              </span>
+              {hasSession ? (
+                <span className="h-2 w-2 rounded-full bg-green-500" />
+              ) : (
+                <span className="h-2 w-2" /> // spacer to keep alignment
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function PlanningPage() {
   const { userId } = useAuthStore();
   const [tab, setTab] = useState<'upcoming' | 'past'>('upcoming');
   const [items, setItems] = useState<PlanningItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+
+  const weekStart = useMemo(() => getWeekStart(new Date()), []);
 
   const fetchAll = useCallback(() => {
     if (!userId) return;
@@ -40,7 +120,7 @@ export default function PlanningPage() {
         const bookingItems: PlanningItem[] = (Array.isArray(bookings) ? bookings : []).map((b: any) => ({
           id: b.id,
           type: 'booking' as const,
-          title: b.session_templates?.title || 'Séance',
+          title: b.session_templates?.title || 'Seance',
           sport: b.session_templates?.sport || '',
           scheduled_at: b.scheduled_at,
           duration: b.session_templates?.duration || 60,
@@ -50,7 +130,7 @@ export default function PlanningPage() {
         const soloItems: PlanningItem[] = (Array.isArray(solos) ? solos : []).map((s: any) => ({
           id: s.id,
           type: 'solo' as const,
-          title: s.title || 'Séance solo',
+          title: s.title || 'Seance solo',
           sport: s.sport,
           scheduled_at: s.scheduled_at,
           duration: s.duration_minutes,
@@ -74,9 +154,9 @@ export default function PlanningPage() {
   const list = tab === 'upcoming' ? upcoming : past;
 
   const statusBadge: Record<string, { variant: 'success' | 'info' | 'danger' | 'warning'; label: string }> = {
-    confirmed: { variant: 'success', label: 'Confirmé' },
-    completed: { variant: 'info', label: 'Terminé' },
-    cancelled: { variant: 'danger', label: 'Annulé' },
+    confirmed: { variant: 'success', label: 'Confirme' },
+    completed: { variant: 'info', label: 'Termine' },
+    cancelled: { variant: 'danger', label: 'Annule' },
     pending: { variant: 'warning', label: 'En attente' },
   };
 
@@ -112,13 +192,22 @@ export default function PlanningPage() {
       <div className="p-4 md:p-8">
         <h1 className="hidden md:block text-2xl font-extrabold text-text mb-6">Mon planning</h1>
 
+        {/* Week calendar */}
+        {loading ? (
+          <div className="h-24 animate-pulse rounded-2xl bg-surface mb-6" />
+        ) : (
+          <div className="mb-6">
+            <WeekCalendar items={items} weekStart={weekStart} />
+          </div>
+        )}
+
         {/* Tabs */}
         <div className="flex gap-2 mb-6">
           <button onClick={() => setTab('upcoming')} className={`rounded-full px-5 py-2 text-sm font-semibold transition ${tab === 'upcoming' ? 'bg-gradient-to-r from-brand-500 to-cyan-500 text-white' : 'bg-surface text-muted'}`}>
-            À venir ({upcoming.length})
+            A venir ({upcoming.length})
           </button>
           <button onClick={() => setTab('past')} className={`rounded-full px-5 py-2 text-sm font-semibold transition ${tab === 'past' ? 'bg-gradient-to-r from-brand-500 to-cyan-500 text-white' : 'bg-surface text-muted'}`}>
-            Passées ({past.length})
+            Passees ({past.length})
           </button>
         </div>
 
@@ -180,9 +269,9 @@ export default function PlanningPage() {
         ) : (
           <EmptyState
             icon="📅"
-            title={tab === 'upcoming' ? 'Aucune séance prévue' : 'Pas encore de séance'}
-            description={tab === 'upcoming' ? 'Planifiez votre prochaine séance' : 'Vos séances passées apparaîtront ici'}
-            actionLabel={tab === 'upcoming' ? 'Créer une séance' : undefined}
+            title={tab === 'upcoming' ? 'Aucune seance prevue' : 'Pas encore de seance'}
+            description={tab === 'upcoming' ? 'Planifiez votre premiere seance pour commencer' : 'Vos seances passees apparaitront ici'}
+            actionLabel={tab === 'upcoming' ? 'Nouvelle seance' : undefined}
             onAction={tab === 'upcoming' ? () => setShowModal(true) : undefined}
           />
         )}
@@ -192,7 +281,7 @@ export default function PlanningPage() {
       <button
         onClick={() => setShowModal(true)}
         className="fixed bottom-24 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-brand-500 to-cyan-500 text-white text-2xl shadow-lg hover:scale-105 transition-transform md:bottom-8"
-        title="Nouvelle séance"
+        title="Nouvelle seance"
       >
         +
       </button>
@@ -205,3 +294,4 @@ export default function PlanningPage() {
     </>
   );
 }
+/* eslint-enable @typescript-eslint/no-explicit-any */

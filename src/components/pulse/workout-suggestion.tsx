@@ -35,7 +35,15 @@ export function WorkoutSuggestionCard({ compact }: { compact?: boolean }) {
     return <div className={`${compact ? 'h-24' : 'h-40'} animate-pulse rounded-2xl bg-surface`} />;
   }
 
-  if (!suggestion) return null;
+  if (!suggestion) {
+    return (
+      <div className="rounded-2xl border-2 border-dashed border-border bg-gradient-to-b from-surface to-white px-5 py-8 text-center">
+        <p className="text-3xl mb-3">💡</p>
+        <p className="text-sm font-semibold text-text">Pas de suggestion pour le moment</p>
+        <p className="mt-1 text-xs text-muted">Connectez Strava pour des insights personnalisés</p>
+      </div>
+    );
+  }
 
   const gradient = typeGradients[suggestion.type];
   const emoji = SPORT_EMOJIS[suggestion.sport as Sport] || '⚡';

@@ -11,6 +11,48 @@ export async function GET() {
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
+  // Get user profile for first name
+  const { data: userProfile } = await db
+    .from('profiles')
+    .select('first_name')
+    .eq('id', user.id)
+    .single();
+
+  // Sessions this week
+  const weekStart = new Date(now);
+  weekStart.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1)); // Monday
+  weekStart.setHours(0, 0, 0, 0);
+
+  const { count: weekBookingCount } = await db
+    .from('bookings')
+    .select('*', { count: 'exact', head: true })
+    .eq('athlete_id', user.id)
+    .in('status', ['completed', 'confirmed'])
+    .gte('scheduled_at', weekStart.toISOString());
+
+  // Also count solo sessions this week
+  let weekSoloCount = 0;
+  try {
+    const { count } = await db
+      .from('solo_sessions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('scheduled_at', weekStart.toISOString());
+    weekSoloCount = count || 0;
+  } catch { /* table may not exist */ }
+
+  // Check Strava connection
+  let stravaConnected = false;
+  try {
+    const { data: conn } = await db
+      .from('user_connectors')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('provider', 'strava')
+      .maybeSingle();
+    stravaConnected = !!conn;
+  } catch { /* table may not exist */ }
+
   // Sessions this month (bookings completed/confirmed)
   const { count: bookingCount } = await db
     .from('bookings')
@@ -122,10 +164,13 @@ export async function GET() {
   }
 
   return NextResponse.json({
+    firstName: userProfile?.first_name || null,
+    sessionsThisWeek: (weekBookingCount || 0) + weekSoloCount,
     sessionsThisMonth: bookingCount || 0,
     totalTimeMinutes,
     activeGoals,
     nextSession,
     recentActivity: allRecent,
+    stravaConnected,
   });
 }

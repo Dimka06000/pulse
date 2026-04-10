@@ -23,16 +23,17 @@ const exploreNav: NavItem[] = [
 ];
 
 const coachNav: NavItem[] = [
-  { href: '/coach', icon: '📊', label: 'Dashboard' },
+  { href: '/coach', icon: '📊', label: 'Tableau de bord' },
   { href: '/coach/clients', icon: '👥', label: 'Mes clients' },
-  { href: '/coach/sessions', icon: '📋', label: 'Séances' },
+  { href: '/coach/sessions', icon: '📋', label: 'Mes séances' },
   { href: '/coach/revenue', icon: '💰', label: 'Revenus' },
   { href: '/coach/reviews', icon: '⭐', label: 'Avis' },
+  { href: '/coach/availability', icon: '🕐', label: 'Disponibilités' },
+  { href: '/coach/events', icon: '🎪', label: 'Événements' },
   { href: '/coach/training', icon: '🎓', label: 'Formations' },
   { href: '/coach/team', icon: '👥', label: 'Équipe' },
   { href: '/coach/programs', icon: '📝', label: 'Programmes' },
   { href: '/coach/videos', icon: '🎬', label: 'Vidéos' },
-  { href: '/coach/events', icon: '🎪', label: 'Événements' },
   { href: '/coach/profile', icon: '✏️', label: 'Mon profil' },
 ];
 

@@ -17,8 +17,10 @@ interface SlotPickerProps {
 export function SlotPicker({ slots, selectedSlot, onSelectSlot, loading }: SlotPickerProps) {
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <p className="text-sm text-gray-400">Chargement des créneaux...</p>
+      <div className="space-y-3 py-8">
+        <div className="h-10 w-full animate-pulse rounded-xl bg-surface" />
+        <div className="h-10 w-full animate-pulse rounded-xl bg-surface" />
+        <div className="h-10 w-3/4 animate-pulse rounded-xl bg-surface" />
       </div>
     );
   }

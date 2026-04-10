@@ -5,6 +5,7 @@ import { useSocialStore } from '@/stores/social';
 import { HierarchyCard } from '@/components/hierarchy/hierarchy-card';
 import { InviteJuniorForm } from '@/components/hierarchy/invite-junior-form';
 import { CommissionConfig } from '@/components/hierarchy/commission-config';
+import { Skeleton } from '@/components/pulse/skeleton';
 
 export default function TeamPage() {
   const { hierarchy, hierarchyLoading, fetchHierarchy } = useSocialStore();
@@ -17,8 +18,10 @@ export default function TeamPage() {
 
   if (hierarchyLoading && !hierarchy) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <p className="text-gray-500">Chargement...</p>
+      <div className="mx-auto max-w-2xl space-y-4 px-4 py-6">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
       </div>
     );
   }

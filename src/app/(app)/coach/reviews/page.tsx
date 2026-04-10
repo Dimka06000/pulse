@@ -5,19 +5,37 @@ import { useSocialStore } from '@/stores/social';
 import { RatingCard } from '@/components/ratings/rating-card';
 import { RatingStats } from '@/components/ratings/rating-stats';
 import { CoachReplyForm } from '@/components/ratings/coach-reply-form';
+import { Skeleton } from '@/components/pulse/skeleton';
+import { EmptyState } from '@/components/pulse/empty-state';
+import { useRouter } from 'next/navigation';
 
 export default function ReviewsPage() {
+  const router = useRouter();
   const { ratings, ratingsLoading, fetchRatings } = useSocialStore();
   const [coachId, setCoachId] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
+  const [timedOut, setTimedOut] = useState(false);
+
+  // Timeout to prevent infinite loading
+  useEffect(() => {
+    const timer = setTimeout(() => setTimedOut(true), 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Fetch coach profile ID first
   useEffect(() => {
     async function loadCoach() {
-      const res = await fetch('/api/coaches/me');
-      if (res.ok) {
-        const data = await res.json();
-        setCoachId(data.id);
+      try {
+        const res = await fetch('/api/coaches/me');
+        if (res.ok) {
+          const data = await res.json();
+          setCoachId(data.id);
+        } else {
+          setLoadError(true);
+        }
+      } catch {
+        setLoadError(true);
       }
     }
     loadCoach();
@@ -29,10 +47,30 @@ export default function ReviewsPage() {
     }
   }, [coachId, fetchRatings]);
 
-  if (ratingsLoading && !ratings) {
+  const isLoading = (ratingsLoading && !ratings) || (!coachId && !loadError && !timedOut);
+
+  if (isLoading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <p className="text-gray-500">Chargement...</p>
+      <div className="mx-auto max-w-2xl space-y-4 px-4 py-6">
+        <Skeleton className="h-8 w-40" />
+        <Skeleton className="h-20 w-full" />
+        <Skeleton className="h-28 w-full" />
+        <Skeleton className="h-28 w-full" />
+      </div>
+    );
+  }
+
+  if (loadError || (timedOut && !coachId)) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-6">
+        <h1 className="text-2xl font-bold text-text mb-6">Avis clients</h1>
+        <EmptyState
+          icon="⚠️"
+          title="Impossible de charger les avis"
+          description="Vérifiez votre connexion ou votre profil coach et réessayez."
+          actionLabel="Réessayer"
+          onAction={() => window.location.reload()}
+        />
       </div>
     );
   }
@@ -42,7 +80,7 @@ export default function ReviewsPage() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6">
-      <h1 className="text-2xl font-bold text-gray-900">Avis clients</h1>
+      <h1 className="text-2xl font-bold text-text">Avis clients</h1>
 
       {/* Stats */}
       {stats && (
@@ -57,11 +95,14 @@ export default function ReviewsPage() {
 
       {/* Rating list */}
       {ratingList.length === 0 ? (
-        <div className="mt-8 rounded-xl border-2 border-dashed border-gray-200 p-8 text-center">
-          <p className="text-gray-500">Aucun avis pour le moment</p>
-          <p className="mt-1 text-sm text-gray-400">
-            Les sportifs pourront vous évaluer après leurs sessions
-          </p>
+        <div className="mt-6">
+          <EmptyState
+            icon="⭐"
+            title="Aucun avis pour le moment"
+            description="Les sportifs pourront vous évaluer après leurs séances. Partagez votre profil pour recevoir vos premiers avis !"
+            actionLabel="Voir mes séances"
+            onAction={() => router.push('/coach/sessions')}
+          />
         </div>
       ) : (
         <div className="mt-6 space-y-4">

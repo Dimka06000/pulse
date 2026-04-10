@@ -34,7 +34,12 @@ export default function StripeOnboardingPage() {
   }
 
   if (!status) {
-    return <p className="text-center text-gray-400 py-12">Chargement...</p>;
+    return (
+      <div className="mx-auto max-w-lg space-y-4 px-4 py-8">
+        <div className="h-8 w-48 animate-pulse rounded-2xl bg-surface" />
+        <div className="h-40 w-full animate-pulse rounded-2xl bg-surface" />
+      </div>
+    );
   }
 
   return (

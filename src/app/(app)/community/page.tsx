@@ -70,7 +70,7 @@ export default function CommunityPage() {
   if (loading) {
     return (
       <>
-        <AppHeader title="Communaute" />
+        <AppHeader title="Communauté" />
         <div className="p-4 md:p-8 space-y-4">
           {[1, 2, 3].map(i => <div key={i} className="h-32 animate-pulse rounded-2xl bg-surface" />)}
         </div>
@@ -80,10 +80,10 @@ export default function CommunityPage() {
 
   return (
     <>
-      <AppHeader title="Communaute" />
+      <AppHeader title="Communauté" />
       <div className="p-4 md:p-8 space-y-6 max-w-2xl mx-auto">
         {/* Desktop title */}
-        <h1 className="hidden md:block text-2xl font-extrabold text-text">Communaute</h1>
+        <h1 className="hidden md:block text-2xl font-extrabold text-text">Communauté</h1>
 
         {/* Tabs */}
         <div className="flex rounded-xl bg-surface p-1">
@@ -95,7 +95,7 @@ export default function CommunityPage() {
                 : 'text-muted'
             }`}
           >
-            {"Fil d'activite"}
+            {"Fil d'activité"}
           </button>
           <button
             onClick={() => setTab('challenges')}
@@ -115,8 +115,10 @@ export default function CommunityPage() {
             {posts.length === 0 ? (
               <EmptyState
                 icon="📡"
-                title="Aucune activite"
-                description="Les activites de la communaute apparaitront ici."
+                title="Aucune activité"
+                description="Partagez votre première activité pour animer le fil !"
+                actionLabel="Enregistrer une séance"
+                onAction={() => { window.location.href = '/planning'; }}
               />
             ) : (
               posts.map(post => (
@@ -132,8 +134,10 @@ export default function CommunityPage() {
             {challenges.length === 0 ? (
               <EmptyState
                 icon="🏆"
-                title="Aucun challenge"
-                description="Les challenges actifs apparaitront ici."
+                title="Aucun challenge actif"
+                description="Connectez-vous avec un coach pour rejoindre des challenges motivants."
+                actionLabel="Explorer les coachs"
+                onAction={() => { window.location.href = '/explore'; }}
               />
             ) : (
               challenges.map(challenge => (

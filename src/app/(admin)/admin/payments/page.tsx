@@ -95,7 +95,11 @@ export default function AdminPayments() {
 
       <div className="rounded-xl border bg-white shadow-sm">
         {loading ? (
-          <p className="py-8 text-center text-gray-400">Chargement...</p>
+          <div className="space-y-3 p-6">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-12 animate-pulse rounded-xl bg-surface" />
+            ))}
+          </div>
         ) : (
           <DataTable
             columns={columns}

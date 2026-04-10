@@ -5,6 +5,7 @@ import { useSocialStore } from '@/stores/social';
 import { CollabCard } from '@/components/collabs/collab-card';
 import { CreateCollabForm } from '@/components/collabs/create-collab-form';
 import { InviteCoachModal } from '@/components/collabs/invite-coach-modal';
+import { Skeleton } from '@/components/pulse/skeleton';
 
 export default function CollabsPage() {
   const { collabs, collabsLoading, fetchCollabs } = useSocialStore();
@@ -17,8 +18,10 @@ export default function CollabsPage() {
 
   if (collabsLoading && !collabs) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <p className="text-gray-500">Chargement...</p>
+      <div className="mx-auto max-w-2xl space-y-4 px-4 py-6">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-24 w-full" />
+        <Skeleton className="h-24 w-full" />
       </div>
     );
   }

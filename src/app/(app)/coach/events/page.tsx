@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useEventsStore } from '@/stores/events';
 import { EventCard } from '@/components/events/event-card';
 import { EventForm } from '@/components/events/event-form';
+import { EmptyState } from '@/components/pulse/empty-state';
 
 type Tab = 'browse' | 'my' | 'create';
 
@@ -69,9 +70,13 @@ export default function EventsManagePage() {
               ))}
             </div>
           ) : openEvents.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <p>Aucun evenement en recherche de coachs actuellement</p>
-            </div>
+            <EmptyState
+              icon="🎪"
+              title="Aucun événement disponible"
+              description="Aucun événement en recherche de coachs actuellement. Revenez bientôt ou proposez le vôtre !"
+              actionLabel="Proposer un événement"
+              onAction={() => setTab('create')}
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {openEvents.map((event) => (
@@ -85,15 +90,13 @@ export default function EventsManagePage() {
       {tab === 'my' && (
         <div>
           {myEvents.length === 0 ? (
-            <div className="text-center py-12 text-gray-500">
-              <p>Vous n&apos;etes inscrit a aucun evenement</p>
-              <button
-                onClick={() => setTab('browse')}
-                className="mt-2 text-blue-600 text-sm hover:underline"
-              >
-                Parcourir les evenements
-              </button>
-            </div>
+            <EmptyState
+              icon="📅"
+              title="Aucun événement en cours"
+              description="Vous n'êtes inscrit à aucun événement pour le moment. Parcourez les événements disponibles pour postuler."
+              actionLabel="Parcourir les événements"
+              onAction={() => setTab('browse')}
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {myEvents.map((event) => (

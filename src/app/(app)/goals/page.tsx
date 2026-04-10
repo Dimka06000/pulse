@@ -286,13 +286,45 @@ export default function GoalsPage() {
             })}
           </div>
         ) : (
-          <EmptyState
-            icon="🎯"
-            title="Fixez votre premier objectif"
-            description="Semi-marathon, 10 séances par mois, perdre 5kg... Définissez un objectif et suivez votre progression."
-            actionLabel="Créer un objectif"
-            onAction={() => setShowForm(true)}
-          />
+          <div className="space-y-6">
+            <EmptyState
+              icon="🎯"
+              title="Aucun objectif défini"
+              description="Fixez votre premier objectif pour suivre vos progrès"
+              actionLabel="Nouvel objectif"
+              onAction={() => setShowForm(true)}
+            />
+
+            {/* Goal template suggestions */}
+            <div>
+              <p className="text-xs font-semibold text-muted uppercase tracking-widest mb-3">Suggestions rapides</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { emoji: '🏃', title: 'Courir 5km', type: 'performance', target: 5, unit: 'km' },
+                  { emoji: '💪', title: "S'entraîner 3x/semaine", type: 'frequency', target: 3, unit: 'séances/sem' },
+                  { emoji: '⚖️', title: 'Perdre 3kg', type: 'weight', target: 3, unit: 'kg' },
+                ].map((tpl) => (
+                  <button
+                    key={tpl.title}
+                    onClick={() => {
+                      setTitle(tpl.title);
+                      setType(tpl.type);
+                      setTargetValue(String(tpl.target));
+                      setUnit(tpl.unit);
+                      setShowForm(true);
+                    }}
+                    className="flex items-center gap-3 rounded-2xl border border-border bg-white p-4 text-left transition hover:border-brand-300 hover:shadow-sm"
+                  >
+                    <span className="text-2xl">{tpl.emoji}</span>
+                    <div>
+                      <p className="text-sm font-semibold text-text">{tpl.title}</p>
+                      <p className="text-xs text-muted">{tpl.target} {tpl.unit}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </>

@@ -81,7 +81,14 @@ export function CoachProfileForm() {
   }
 
   if (loading) {
-    return <div className="animate-pulse text-gray-400">Chargement...</div>;
+    return (
+      <div className="mx-auto max-w-2xl space-y-4 p-4">
+        <div className="h-8 w-48 animate-pulse rounded-2xl bg-surface" />
+        <div className="h-12 w-full animate-pulse rounded-2xl bg-surface" />
+        <div className="h-12 w-full animate-pulse rounded-2xl bg-surface" />
+        <div className="h-24 w-full animate-pulse rounded-2xl bg-surface" />
+      </div>
+    );
   }
 
   return (
