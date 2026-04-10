@@ -105,12 +105,12 @@ export function PlanForm({ clientName, initial, onSubmit, loading }: PlanFormPro
         <div className="space-y-3">
           {meals.map((meal, i) => (
             <div key={i} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-              <div className="mb-2 flex items-center gap-3">
+              <div className="mb-2 grid grid-cols-2 gap-2 sm:flex sm:items-center sm:gap-3">
                 <input
                   type="text"
                   value={meal.name}
                   onChange={(e) => updateMeal(i, 'name', e.target.value)}
-                  className="w-32 rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium"
+                  className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium sm:w-32"
                 />
                 <input
                   type="time"
@@ -123,7 +123,7 @@ export function PlanForm({ clientName, initial, onSubmit, loading }: PlanFormPro
                   value={meal.calories || ''}
                   onChange={(e) => updateMeal(i, 'calories', +e.target.value)}
                   placeholder="kcal"
-                  className="w-20 rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  className="col-span-2 rounded-lg border border-gray-200 px-3 py-2 text-sm sm:w-20 sm:col-span-1"
                 />
               </div>
               <textarea

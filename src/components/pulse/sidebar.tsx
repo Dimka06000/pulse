@@ -19,6 +19,7 @@ const athleteNav: NavItem[] = [
 const exploreNav: NavItem[] = [
   { href: '/explore', icon: '🔍', label: 'Coachs' },
   { href: '/explore?tab=events', icon: '🎪', label: 'Événements' },
+  { href: '/explore/programs', icon: '📝', label: 'Programmes' },
   { href: '/community', icon: '🏆', label: 'Communauté' },
   { href: '/messages', icon: '💬', label: 'Messages' },
 ];

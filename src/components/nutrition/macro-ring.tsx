@@ -26,7 +26,7 @@ export function MacroRing({ protein, carbs, fat, dailyCalories }: MacroRingProps
   let offset = 0;
 
   return (
-    <div className="flex items-center gap-8">
+    <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-8">
       <div className="relative">
         <svg width="140" height="140" viewBox="0 0 140 140">
           {segments.map((seg, i) => {
