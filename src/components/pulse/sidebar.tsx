@@ -20,6 +20,7 @@ const exploreNav: NavItem[] = [
   { href: '/explore', icon: '🔍', label: 'Coachs' },
   { href: '/explore?tab=events', icon: '🎪', label: 'Événements' },
   { href: '/community', icon: '🏆', label: 'Communauté' },
+  { href: '/messages', icon: '💬', label: 'Messages' },
 ];
 
 const coachNav: NavItem[] = [

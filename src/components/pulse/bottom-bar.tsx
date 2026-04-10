@@ -7,7 +7,7 @@ const tabs = [
   { href: '/dashboard', icon: '🏠', label: 'Accueil' },
   { href: '/explore', icon: '🔍', label: 'Explorer' },
   { href: '/planning', icon: '📅', label: 'Planning' },
-  { href: '/progress', icon: '📊', label: 'Progrès' },
+  { href: '/messages', icon: '💬', label: 'Messages' },
   { href: '/profile', icon: '👤', label: 'Profil' },
 ];
 

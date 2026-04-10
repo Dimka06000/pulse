@@ -6,12 +6,14 @@ import {
   sessionReminderHtml,
   newBookingCoachHtml,
   weeklyDigestHtml,
+  newMessageHtml,
   type BookingConfirmedData,
   type BookingCancelledData,
   type PaymentConfirmedData,
   type SessionReminderData,
   type NewBookingCoachData,
   type WeeklyDigestData,
+  type NewMessageData,
 } from './templates';
 
 const FROM = 'Pulse <noreply@pulse-app.fr>';
@@ -91,5 +93,18 @@ export async function sendWeeklyDigest(
     to,
     subject: `Votre semaine Pulse — ${data.sessionsCount} séance${data.sessionsCount > 1 ? 's' : ''}`,
     html: weeklyDigestHtml(data),
+  });
+}
+
+export async function sendNewMessage(
+  to: string,
+  data: NewMessageData,
+) {
+  const resend = getResendClient();
+  return resend.emails.send({
+    from: FROM,
+    to,
+    subject: `Message de ${data.senderName} — Pulse`,
+    html: newMessageHtml(data),
   });
 }

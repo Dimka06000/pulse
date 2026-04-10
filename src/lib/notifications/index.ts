@@ -5,6 +5,7 @@ export {
   sendSessionReminder,
   sendNewBookingCoach,
   sendWeeklyDigest,
+  sendNewMessage,
 } from './send';
 
 export type {
@@ -14,4 +15,5 @@ export type {
   SessionReminderData,
   NewBookingCoachData,
   WeeklyDigestData,
+  NewMessageData,
 } from './templates';

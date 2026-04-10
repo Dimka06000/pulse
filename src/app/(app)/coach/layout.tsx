@@ -16,6 +16,7 @@ const coachSidebarNav: NavItem[] = [
   { href: '/coach/reviews', icon: '⭐', label: 'Avis' },
   { href: '/coach/availability', icon: '🕐', label: 'Disponibilités' },
   { href: '/coach/events', icon: '🎪', label: 'Événements' },
+  { href: '/messages', icon: '💬', label: 'Messages' },
 ];
 
 function CoachSubNav() {

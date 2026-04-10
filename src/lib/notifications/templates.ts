@@ -40,6 +40,12 @@ export interface NewBookingCoachData {
   time: string;
 }
 
+export interface NewMessageData {
+  recipientName: string;
+  senderName: string;
+  messagePreview: string;
+}
+
 export interface WeeklyDigestData {
   athleteName: string;
   sessionsCount: number;
@@ -189,5 +195,17 @@ export function weeklyDigestHtml(data: WeeklyDigestData): string {
     </table>
     ${data.suggestion ? `<p style="margin:0 0 16px;font-size:14px;padding:16px;background:#f0fdf4;border-radius:8px;color:#166534;">💡 <strong>Suggestion :</strong> ${data.suggestion}</p>` : ''}
     <p style="margin:0;font-size:14px;color:#52525b;">Continuez sur cette lancée !</p>
+  `);
+}
+
+export function newMessageHtml(data: NewMessageData): string {
+  return layout('Nouveau message', `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#18181b;">Nouveau message</h1>
+    <p style="margin:0 0 24px;font-size:15px;color:#52525b;">Bonjour ${data.recipientName},</p>
+    <p style="margin:0 0 20px;font-size:15px;color:#3f3f46;"><strong>${data.senderName}</strong> vous a envoyé un message :</p>
+    <div style="background:#fafafa;border-radius:8px;padding:20px;margin-bottom:24px;border-left:3px solid #22c55e;">
+      <p style="margin:0;font-size:14px;color:#3f3f46;font-style:italic;">"${data.messagePreview}${data.messagePreview.length >= 100 ? '…' : ''}"</p>
+    </div>
+    <p style="margin:0;font-size:14px;color:#52525b;">Connectez-vous à Pulse pour répondre.</p>
   `);
 }

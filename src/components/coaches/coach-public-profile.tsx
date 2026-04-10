@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { StarRating } from '@/components/ui/star-rating';
 import { api } from '@/lib/api';
@@ -44,9 +45,11 @@ interface CoachProfileData {
 }
 
 export function CoachPublicProfile({ coachId }: { coachId: string }) {
+  const router = useRouter();
   const [coach, setCoach] = useState<CoachProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [contactLoading, setContactLoading] = useState(false);
 
   useEffect(() => {
     api
@@ -106,6 +109,28 @@ export function CoachPublicProfile({ coachId }: { coachId: string }) {
           <p className="mt-1 text-lg font-semibold text-gray-900">
             {coach.hourlyRate > 0 ? `${coach.hourlyRate}€/h` : 'Tarif sur demande'}
           </p>
+          <button
+            onClick={async () => {
+              setContactLoading(true);
+              try {
+                const res = await fetch('/api/messages', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ coach_id: coachId }),
+                });
+                if (res.ok) {
+                  const { conversationId } = await res.json();
+                  router.push(`/messages/${conversationId}`);
+                }
+              } catch { /* ignore */ }
+              setContactLoading(false);
+            }}
+            disabled={contactLoading}
+            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-brand-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:opacity-50"
+          >
+            <span>💬</span>
+            {contactLoading ? 'Ouverture...' : 'Contacter'}
+          </button>
         </div>
       </div>
 
