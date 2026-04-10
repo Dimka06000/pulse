@@ -36,6 +36,19 @@ export default function ExploreProgramsPage() {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState<string | null>(null);
   const [enrolled, setEnrolled] = useState<Set<string>>(new Set());
+  const [pushingGarmin, setPushingGarmin] = useState<string | null>(null);
+  const [garminConnected, setGarminConnected] = useState(false);
+
+  // Check if Garmin is connected
+  useEffect(() => {
+    fetch('/api/connectors')
+      .then(r => r.ok ? r.json() : { connections: [] })
+      .then(d => {
+        const conns = d.connections || [];
+        setGarminConnected(conns.some((c: any) => c.provider === 'garmin' && c.is_active));
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch('/api/programs?published=true')
@@ -116,11 +129,34 @@ export default function ExploreProgramsPage() {
                   </div>
 
                   {/* CTA */}
-                  <div className="mt-auto">
+                  <div className="mt-auto space-y-2">
                     {isEnrolled ? (
-                      <div className="rounded-xl bg-green-50 py-2.5 text-center text-sm font-semibold text-green-700">
-                        ✓ Inscrit
-                      </div>
+                      <>
+                        <div className="rounded-xl bg-green-50 py-2.5 text-center text-sm font-semibold text-green-700">
+                          ✓ Inscrit
+                        </div>
+                        {garminConnected && (
+                          <button
+                            onClick={async () => {
+                              setPushingGarmin(prog.id);
+                              try {
+                                const res = await fetch(`/api/programs/${prog.id}/push-garmin`, { method: 'POST' });
+                                const data = await res.json();
+                                if (res.ok) {
+                                  alert(`${data.pushed} séances envoyées sur votre Garmin !`);
+                                } else {
+                                  alert(data.error || 'Erreur');
+                                }
+                              } catch { /* ignore */ }
+                              setPushingGarmin(null);
+                            }}
+                            disabled={pushingGarmin === prog.id}
+                            className="w-full rounded-xl border border-blue-200 bg-blue-50 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:opacity-50"
+                          >
+                            {pushingGarmin === prog.id ? 'Envoi...' : '⌚ Envoyer sur ma Garmin'}
+                          </button>
+                        )}
+                      </>
                     ) : (
                       <button
                         onClick={() => handleEnroll(prog.id)}
