@@ -1,5 +1,6 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, Cormorant_Garamond, JetBrains_Mono } from 'next/font/google';
+import { RegisterServiceWorker } from '@/components/pwa/register-sw';
 import './globals.css';
 
 const inter = Inter({
@@ -24,13 +25,26 @@ const jetbrains = JetBrains_Mono({
 export const metadata: Metadata = {
   title: 'Pulse — Votre sport, votre rythme',
   description: 'Planifiez vos séances, suivez vos progrès, trouvez votre coach.',
-  icons: { icon: '/icon.svg' },
+  icons: { icon: '/icon.svg', apple: '/icon-192.png' },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Pulse',
+  },
   openGraph: {
     title: 'Pulse — Votre sport, votre rythme',
     description: 'Planifiez vos séances, suivez vos progrès, trouvez votre coach.',
     siteName: 'Pulse',
     type: 'website',
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#22c55e',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -40,7 +54,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" className={`${inter.variable} ${cormorant.variable} ${jetbrains.variable}`}>
-      <body className="font-sans antialiased text-text bg-bg">{children}</body>
+      <body className="font-sans antialiased text-text bg-bg">
+        {children}
+        <RegisterServiceWorker />
+      </body>
     </html>
   );
 }
