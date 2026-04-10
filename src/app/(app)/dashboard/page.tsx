@@ -89,20 +89,19 @@ export default function DashboardPage() {
   const [showModal, setShowModal] = useState(false);
   const [showChecklist, setShowChecklist] = useState(true);
 
-  // Redirect to onboarding only for brand new users (no data + no flag)
+  // Redirect to onboarding only for brand new users (no profile data + no flag)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (localStorage.getItem('pulse_onboarded')) return;
-    // Check if user has any data before redirecting
     if (userId) {
-      fetch('/api/dashboard/stats').then(r => r.json()).then(data => {
-        if (data?.sessionsThisMonth === 0 && !data?.nextSession) {
+      fetch('/api/profile').then(r => r.ok ? r.json() : null).then(data => {
+        // Only redirect if profile has no name set (truly new user)
+        if (data && !data.first_name) {
           router.push('/onboarding');
         } else {
           localStorage.setItem('pulse_onboarded', 'true');
         }
       }).catch(() => {
-        // If API fails, don't redirect — just skip onboarding
         localStorage.setItem('pulse_onboarded', 'true');
       });
     }

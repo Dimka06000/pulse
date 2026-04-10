@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppHeader } from '@/components/pulse/app-header';
 import { Button } from '@/components/pulse/button';
@@ -10,7 +11,8 @@ import Link from 'next/link';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { userRole, clear } = useAuthStore();
+  const { userRole, userId, setUser, clear } = useAuthStore();
+  const [becomingCoach, setBecomingCoach] = useState(false);
 
   const handleLogout = async () => {
     const supabase = getSupabaseBrowserClient();
@@ -54,15 +56,35 @@ export default function ProfilePage() {
               </div>
             </Link>
           ) : (
-            <Link href="/coach/profile">
+            <button
+              onClick={async () => {
+                setBecomingCoach(true);
+                try {
+                  const res = await fetch('/api/coaches', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({}),
+                  });
+                  if (res.ok || res.status === 409) {
+                    if (userId) setUser(userId, 'both');
+                    router.push('/coach/profile/edit');
+                  }
+                } catch { /* ignore */ }
+                setBecomingCoach(false);
+              }}
+              disabled={becomingCoach}
+              className="w-full text-left"
+            >
               <div className="flex items-center justify-between rounded-xl border border-violet-200 bg-violet-50 p-4">
                 <div className="flex items-center gap-3">
                   <span className="text-xl">⚡</span>
-                  <span className="text-sm font-semibold text-violet-700">Devenir coach</span>
+                  <span className="text-sm font-semibold text-violet-700">
+                    {becomingCoach ? 'Création en cours...' : 'Devenir coach'}
+                  </span>
                 </div>
                 <span className="text-violet-400">→</span>
               </div>
-            </Link>
+            </button>
           )}
 
           <Link href="/profile/connections">

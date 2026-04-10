@@ -1,0 +1,79 @@
+-- Seed training courses with real coaching content
+
+INSERT INTO training_courses (id, title, description, category, duration_minutes, badge_icon, required_for_verification, modules) VALUES
+
+-- 1. Les bases de la plateforme (obligatoire pour vérification)
+('c0000001-0000-0000-0000-000000000001',
+ 'Les bases de Pulse',
+ 'Apprenez à utiliser la plateforme : créer des séances, gérer vos disponibilités, recevoir des paiements.',
+ 'plateforme',
+ 30,
+ '🎓',
+ true,
+ '[
+   {"id": "m1-1", "title": "Créer votre profil coach", "type": "text", "content": "Votre profil est votre vitrine. Ajoutez une photo professionnelle, une bio qui raconte votre parcours, vos spécialités et vos certifications. Les athlètes choisissent un coach qui leur ressemble — soyez authentique.\n\n**Checklist :**\n- Photo de qualité (visage visible, tenue sportive)\n- Bio de 3-5 lignes (parcours, philosophie, spécialités)\n- Au moins 3 spécialités sélectionnées\n- Tarif horaire défini"},
+   {"id": "m1-2", "title": "Créer des séances", "type": "text", "content": "Proposez différents types de séances pour attirer plus de clients :\n\n**Individuelle** — coaching 1-on-1, le plus demandé\n**Groupe** — jusqu''à 10 personnes, bon pour la communauté\n**En ligne** — visio, idéal pour élargir votre zone\n\nConseil : commencez par 2-3 séances types. Vous pourrez toujours en ajouter."},
+   {"id": "m1-3", "title": "Gérer vos disponibilités", "type": "text", "content": "Définissez vos créneaux dans l''onglet Disponibilités. Les athlètes ne peuvent réserver que sur vos créneaux ouverts.\n\n**Bonnes pratiques :**\n- Ouvrez au moins 10 créneaux par semaine\n- Gardez de la flexibilité (matin + soir)\n- Bloquez vos jours de repos\n- Un athlète doit réserver 24h à l''avance minimum"},
+   {"id": "m1-4", "title": "Recevoir des paiements", "type": "text", "content": "Les paiements passent par Stripe Connect. Vous recevez 85% du montant, Pulse prend 15% de commission.\n\n**Étapes :**\n1. Connectez votre compte Stripe (onglet Stripe)\n2. Ajoutez vos coordonnées bancaires\n3. Les paiements sont versés automatiquement sous 2 jours ouvrés\n\nVous pouvez suivre vos revenus en temps réel dans l''onglet Revenus."}
+ ]'::jsonb),
+
+-- 2. Le travail mental
+('c0000001-0000-0000-0000-000000000002',
+ 'Le travail mental du sportif',
+ 'Techniques de préparation mentale pour accompagner vos athlètes : gestion du stress, focus, confiance en soi.',
+ 'coaching',
+ 45,
+ '🧠',
+ false,
+ '[
+   {"id": "m2-1", "title": "Introduction à la préparation mentale", "type": "text", "content": "La performance sportive est autant mentale que physique. Un athlète qui doute de ses capacités ne pourra pas exprimer son plein potentiel, même avec une condition physique parfaite.\n\n**Les 4 piliers du mental :**\n1. **La confiance** — croire en sa capacité à réussir\n2. **La concentration** — rester focus sur le moment présent\n3. **La gestion des émotions** — transformer le stress en énergie\n4. **La motivation** — maintenir l''engagement sur la durée\n\nEn tant que coach, votre rôle est d''aider l''athlète à développer ces 4 piliers en parallèle de son entraînement physique."},
+   {"id": "m2-2", "title": "Le dialogue interne positif", "type": "text", "content": "Le dialogue interne est la voix que l''on entend dans sa tête pendant l''effort. Il peut être destructeur (\"je n''y arriverai jamais\") ou constructeur (\"j''ai préparé ça, je suis prêt\").\n\n**Exercice à proposer à vos athlètes :**\n1. Pendant 1 semaine, noter chaque pensée négative pendant l''entraînement\n2. Reformuler chaque pensée en version positive :\n   - \"C''est trop dur\" → \"C''est un défi que j''ai choisi\"\n   - \"Les autres sont meilleurs\" → \"Je progresse à mon rythme\"\n   - \"Je suis nul\" → \"J''apprends encore\"\n3. Répéter les formulations positives comme un mantra avant chaque séance\n\n**Clé :** ne pas nier la difficulté, mais la recadrer comme un choix et une opportunité."},
+   {"id": "m2-3", "title": "La fixation d''objectifs SMART", "type": "text", "content": "Des objectifs bien définis sont le moteur de la motivation.\n\n**SMART :**\n- **S**pécifique — \"Courir un 10 km\" plutôt que \"courir mieux\"\n- **M**esurable — \"en moins de 50 minutes\"\n- **A**tteignable — basé sur le niveau actuel + progression réaliste\n- **R**éaliste — compatible avec le mode de vie de l''athlète\n- **T**emporel — \"d''ici le 15 septembre\"\n\n**En pratique :**\n- Fixez 1 objectif long terme (3-6 mois)\n- Découpez en 3-4 étapes intermédiaires\n- Célébrez chaque étape franchie\n- Ajustez si nécessaire (sans culpabiliser)"},
+   {"id": "m2-4", "title": "Routine pré-compétition", "type": "text", "content": "Une routine structurée réduit l''anxiété et met l''athlète dans un état de performance optimal.\n\n**Routine type (J-1 à H-1) :**\n\n**La veille :**\n- Préparer tout le matériel\n- Repas familier (pas de nouveauté)\n- Coucher à heure habituelle\n- 5 min de visualisation positive\n\n**Le jour J :**\n- Réveil 3h avant (minimum)\n- Petit-déjeuner testé à l''entraînement\n- Musique motivante pendant le trajet\n\n**1h avant :**\n- Échauffement physique progressif\n- 3 respirations profondes\n- Répéter son mantra personnel\n- \"Je suis prêt, j''ai fait le travail\"\n\nCette routine doit être personnalisée et pratiquée plusieurs fois avant le jour J."}
+ ]'::jsonb),
+
+-- 3. La visualisation
+('c0000001-0000-0000-0000-000000000003',
+ 'La visualisation sportive',
+ 'Maîtrisez les techniques de visualisation pour améliorer la performance et la confiance de vos athlètes.',
+ 'coaching',
+ 35,
+ '👁️',
+ false,
+ '[
+   {"id": "m3-1", "title": "Qu''est-ce que la visualisation ?", "type": "text", "content": "La visualisation (ou imagerie mentale) consiste à se représenter mentalement un geste, une situation ou un résultat avec le maximum de détails sensoriels.\n\n**Pourquoi ça marche :**\nLe cerveau ne fait pas la différence entre une action réellement effectuée et une action intensément visualisée. Les mêmes circuits neuronaux sont activés.\n\n**Études clés :**\n- Les basketteurs qui visualisent leurs lancers francs progressent presque autant que ceux qui pratiquent réellement (Richardson, 1967)\n- Les haltérophiles qui visualisent leurs mouvements augmentent leur force de 13.5% sans toucher une barre (Ranganathan, 2004)\n\n**Types de visualisation :**\n1. **Interne** — vous voyez à travers vos propres yeux\n2. **Externe** — vous vous voyez de l''extérieur, comme un film\n\nLa plupart des athlètes bénéficient d''une combinaison des deux."},
+   {"id": "m3-2", "title": "Protocole de visualisation guidée", "type": "text", "content": "**Séance type (10-15 min) :**\n\n1. **Installation** (2 min)\n   - Assis ou allongé, yeux fermés\n   - 5 respirations profondes\n   - Scanner corporel : relâcher chaque zone de tension\n\n2. **Visualisation du geste** (5 min)\n   - Voir le lieu (couleurs, lumière, sol)\n   - Entendre les sons (public, respiration, équipement)\n   - Sentir les sensations (muscles, température, grip)\n   - Exécuter le geste parfait au ralenti\n   - Puis à vitesse normale\n   - Répéter 3 fois\n\n3. **Visualisation du résultat** (3 min)\n   - Se voir franchir la ligne / réussir le mouvement\n   - Ressentir la satisfaction, la fierté\n   - Associer une émotion positive intense\n\n4. **Retour** (2 min)\n   - 3 respirations profondes\n   - Ouvrir les yeux doucement\n   - Noter ses sensations dans le journal\n\n**Fréquence :** 3-5 fois par semaine, idéalement avant l''entraînement."},
+   {"id": "m3-3", "title": "Visualisation et gestion de l''échec", "type": "text", "content": "La visualisation ne sert pas qu''à imaginer le succès. Elle est aussi puissante pour préparer l''athlète aux situations difficiles.\n\n**Technique du \"Et si...\" :**\n\nFaites visualiser à votre athlète :\n- \"Et si je rate mon départ ?\" → Je reste calme, je me recentre, je rattrape progressivement\n- \"Et si j''ai un point de côté ?\" → Je ralentis ma respiration, j''adapte mon rythme, ça passe\n- \"Et si l''adversaire est plus fort ?\" → Je me concentre sur mon propre plan, pas sur lui\n\n**L''objectif :** transformer l''imprévu en \"déjà-vu mental\". L''athlète qui a visualisé le problème ET sa solution réagira avec calme le jour J.\n\n**Important :** toujours terminer la visualisation par la version positive. Le cerveau retient surtout la dernière image."}
+ ]'::jsonb),
+
+-- 4. La respiration
+('c0000001-0000-0000-0000-000000000004',
+ 'Techniques de respiration',
+ 'Respirations pour la performance, la récupération et la gestion du stress. Outils concrets pour vos séances.',
+ 'coaching',
+ 30,
+ '🌬️',
+ false,
+ '[
+   {"id": "m4-1", "title": "Respiration et système nerveux", "type": "text", "content": "La respiration est le seul levier direct que nous avons sur notre système nerveux autonome.\n\n**Deux modes :**\n- **Sympathique** (fight or flight) — activé par l''inspiration, accélère le cœur\n- **Parasympathique** (rest & digest) — activé par l''expiration, ralentit le cœur\n\n**Application pratique :**\n- Avant un effort intense : respirations courtes et rapides (activation)\n- Après l''effort ou avant le sommeil : expirations longues (récupération)\n- Pendant l''effort : respiration rythmée sur le mouvement\n\nUn coach qui maîtrise la respiration a un outil puissant pour réguler l''état de son athlète en temps réel."},
+   {"id": "m4-2", "title": "La cohérence cardiaque (365)", "type": "text", "content": "La technique la plus simple et la plus étudiée scientifiquement.\n\n**Protocole 365 :**\n- **3** fois par jour\n- **6** respirations par minute\n- Pendant **5** minutes\n\n**Comment :**\n- Inspirer 5 secondes par le nez\n- Expirer 5 secondes par la bouche\n- Rythme régulier, sans forcer\n- Concentrer l''attention sur le cœur\n\n**Effets mesurés :**\n- Réduction du cortisol (hormone du stress) en 3 semaines\n- Amélioration de la variabilité cardiaque (HRV)\n- Meilleure concentration et prise de décision\n- Meilleur sommeil\n\n**Quand l''utiliser :**\n- Matin au réveil (mise en route)\n- Avant une compétition (calme)\n- Le soir (récupération)"},
+   {"id": "m4-3", "title": "La respiration en boîte (Box Breathing)", "type": "text", "content": "Utilisée par les Navy SEALs pour garder leur calme en situation de stress extrême.\n\n**Protocole :**\n- Inspirer 4 secondes\n- Retenir 4 secondes (poumons pleins)\n- Expirer 4 secondes\n- Retenir 4 secondes (poumons vides)\n- Répéter 4-8 cycles\n\n**Variante avancée :**\nAugmentez progressivement à 5, 6, puis 7 secondes par phase.\n\n**Application en coaching :**\n- Entre les séries de musculation\n- Avant un mouvement technique complexe\n- Pendant les pauses en sport collectif\n- Quand l''athlète montre des signes de panique ou frustration"},
+   {"id": "m4-4", "title": "Respiration de récupération post-effort", "type": "text", "content": "Après un effort intense, la récupération active par la respiration accélère le retour au calme.\n\n**Protocole post-effort :**\n\n**Phase 1 — Retour au calme (2 min) :**\n- Marcher lentement\n- Inspirer 3s par le nez, expirer 6s par la bouche\n- Ratio 1:2 (expiration 2x plus longue)\n\n**Phase 2 — Récupération profonde (3 min) :**\n- Allongé ou assis\n- Respiration abdominale lente\n- Main sur le ventre pour sentir le mouvement\n- Inspirer 4s, expirer 8s\n\n**Phase 3 — Scan corporel (2 min) :**\n- À chaque expiration, relâcher une zone du corps\n- Des pieds vers la tête\n- Identifier les zones de tension restantes\n\n**Pourquoi c''est important :**\nUn athlète qui récupère mieux entre les séances progresse plus vite et se blesse moins."}
+ ]'::jsonb),
+
+-- 5. Le parcours initiatique d'une épreuve
+('c0000001-0000-0000-0000-000000000005',
+ 'Le parcours initiatique d''une épreuve',
+ 'Accompagnez votre athlète de l''inscription à l''après-course : préparation, jour J, débrief et transformation.',
+ 'coaching',
+ 50,
+ '🏔️',
+ false,
+ '[
+   {"id": "m5-1", "title": "L''épreuve comme rite de passage", "type": "text", "content": "Depuis l''Antiquité, les épreuves physiques servent de rites de passage. Un marathon, un triathlon, une compétition de CrossFit — ce ne sont pas juste des événements sportifs. Ce sont des transformations personnelles.\n\n**Les 3 phases du rite (Joseph Campbell) :**\n\n1. **La séparation** — L''athlète quitte sa zone de confort en s''inscrivant. Il dit \"oui\" à quelque chose qui lui fait peur.\n\n2. **L''épreuve** — Le jour J, il traverse la souffrance, le doute, la fatigue. C''est le creuset de la transformation.\n\n3. **Le retour** — Après l''épreuve, il n''est plus la même personne. Il a prouvé quelque chose à lui-même.\n\n**Votre rôle de coach :** être le guide qui accompagne chaque phase. Pas juste un préparateur physique, mais un passeur."},
+   {"id": "m5-2", "title": "Phase 1 — La préparation (J-12 à J-4 semaines)", "type": "text", "content": "La préparation est un voyage en soi. Chaque semaine construit la confiance.\n\n**Semaines 12 à 8 : Construire la base**\n- Volume progressif (+10% par semaine max)\n- Travail technique spécifique\n- Journal quotidien : sommeil, énergie, humeur\n- 1 visualisation par semaine\n\n**Semaines 8 à 4 : Intensifier**\n- Séances spécifiques (allure course, terrain similaire)\n- Test grandeur nature (50-70% de l''épreuve)\n- Nutrition de course testée à l''entraînement\n- Routine pré-course mise en place\n\n**Semaines 4 à 1 : Affûter**\n- Réduction progressive du volume (-20% par semaine)\n- Maintien de l''intensité\n- Travail mental intensifié (visualisation quotidienne)\n- Vérification matériel et logistique\n\n**L''erreur classique :** en faire trop les 2 dernières semaines par peur de ne pas être prêt. Votre rôle est de rassurer et retenir."},
+   {"id": "m5-3", "title": "Phase 2 — Le jour J", "type": "text", "content": "Le jour de l''épreuve, votre travail est presque terminé. La préparation est faite. Votre rôle maintenant : ancrer la confiance.\n\n**Avant le départ :**\n- Rappeler le plan de course (pas le changer !)\n- \"Tu as fait le travail. Fais confiance à ta préparation.\"\n- Routine de respiration (3 min de cohérence cardiaque)\n- Dernier check matériel ensemble\n\n**Pendant l''épreuve (si possible) :**\n- Messages courts et positifs aux ravitaillements\n- Pas de données chiffrées (\"tu es à X min du chrono\") → plutôt des sensations\n- \"Comment tu te sens ?\" plutôt que \"Tu es en retard\"\n\n**Le mur (quand il arrive) :**\n- Rappeler que c''est prévu et normal\n- \"Un kilomètre à la fois\"\n- \"Ta tête abandonne avant ton corps\"\n- Revenir aux basiques : respiration, posture, rythme\n\n**Après la ligne :**\n- Pas d''analyse technique immédiate\n- Juste : \"Tu l''as fait. Bravo.\"\n- Laisser l''émotion s''exprimer"},
+   {"id": "m5-4", "title": "Phase 3 — Le retour et la transformation", "type": "text", "content": "Les 2 semaines après l''épreuve sont critiques et souvent négligées.\n\n**Semaine 1 : Récupération totale**\n- Repos actif uniquement (marche, yoga, natation douce)\n- Alimentation riche et variée\n- Sommeil ++\n- Pas de pression de reprise\n\n**Semaine 2 : Le débrief**\n- Séance de débrief structurée avec l''athlète :\n  1. \"Qu''est-ce qui s''est bien passé ?\"\n  2. \"Qu''est-ce qui a été difficile ?\"\n  3. \"Qu''est-ce que tu as appris sur toi ?\"\n  4. \"Qu''est-ce que tu ferais différemment ?\"\n  5. \"Quel est le prochain objectif ?\"\n\n**Le post-race blues :**\nAprès un objectif atteint, beaucoup d''athlètes ressentent un vide. C''est normal. Votre rôle :\n- Normaliser le sentiment (\"C''est le signe que ça comptait pour toi\")\n- Proposer un nouvel objectif (même petit)\n- Célébrer le chemin parcouru, pas juste le résultat\n\n**La transformation :**\nAidez l''athlète à verbaliser sa transformation : \"Avant cette épreuve, je pensais que... Maintenant je sais que...\"\n\nC''est cette prise de conscience qui fidélise un client pour des années."}
+ ]'::jsonb)
+
+ON CONFLICT (id) DO NOTHING;

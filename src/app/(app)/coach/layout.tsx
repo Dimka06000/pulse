@@ -90,7 +90,7 @@ export default function CoachLayout({ children }: { children: React.ReactNode })
     return () => clearTimeout(timer);
   }, []);
 
-  const isCoach = userRole === 'coach';
+  const isCoach = userRole === 'coach' || userRole === 'both';
   const isLoading = !userRole && !timedOut;
 
   // Still loading — show skeleton
@@ -108,7 +108,18 @@ export default function CoachLayout({ children }: { children: React.ReactNode })
             title="Devenez coach sur Pulse"
             description="Partagez votre expertise, gérez vos clients, vos séances et vos revenus depuis un seul espace dédié."
             actionLabel="Créer mon profil coach"
-            onAction={() => router.push('/profile')}
+            onAction={async () => {
+              try {
+                const res = await fetch('/api/coaches', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({}),
+                });
+                if (res.ok || res.status === 409) {
+                  window.location.href = '/coach/profile/edit';
+                }
+              } catch { /* ignore */ }
+            }}
           />
         </div>
       </div>

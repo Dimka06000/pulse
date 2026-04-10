@@ -1,6 +1,9 @@
 'use client';
 
+import Link from 'next/link';
+
 interface CourseCardProps {
+  id?: string;
   title: string;
   description: string;
   category: string;
@@ -20,7 +23,7 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export function CourseCard({
-  title, description, durationMinutes, badgeIcon, requiredForVerification,
+  id, title, description, durationMinutes, badgeIcon, requiredForVerification,
   status, progress, onEnroll, loading,
 }: CourseCardProps) {
   return (
@@ -68,17 +71,30 @@ export function CourseCard({
         </div>
       )}
 
-      <button
-        onClick={onEnroll}
-        disabled={status === 'completed' || loading}
-        className={`w-full rounded-full py-2.5 text-sm font-semibold transition-colors ${
-          status === 'completed'
-            ? 'bg-emerald-100 text-emerald-700 cursor-default'
-            : 'bg-indigo-600 text-white hover:bg-indigo-700'
-        } disabled:opacity-70`}
-      >
-        {loading ? 'Chargement...' : STATUS_LABELS[status]}
-      </button>
+      {id ? (
+        <Link
+          href={`/coach/training/${id}`}
+          className={`block w-full rounded-full py-2.5 text-center text-sm font-semibold transition-colors ${
+            status === 'completed'
+              ? 'bg-emerald-100 text-emerald-700'
+              : 'bg-indigo-600 text-white hover:bg-indigo-700'
+          }`}
+        >
+          {STATUS_LABELS[status]}
+        </Link>
+      ) : (
+        <button
+          onClick={onEnroll}
+          disabled={status === 'completed' || loading}
+          className={`w-full rounded-full py-2.5 text-sm font-semibold transition-colors ${
+            status === 'completed'
+              ? 'bg-emerald-100 text-emerald-700 cursor-default'
+              : 'bg-indigo-600 text-white hover:bg-indigo-700'
+          } disabled:opacity-70`}
+        >
+          {loading ? 'Chargement...' : STATUS_LABELS[status]}
+        </button>
+      )}
     </div>
   );
 }
