@@ -12,7 +12,7 @@ import type {
   CollabUpdateInput,
   CollabInviteInput,
   MyCollabs,
-} from './types.js';
+} from './types';
 
 // ─── Create collaboration ───────────────────────────────────────────
 

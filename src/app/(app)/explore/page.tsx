@@ -22,6 +22,7 @@ export default function ExplorePage() {
     fetch('/api/coaches?sortBy=relevance')
       .then(r => r.ok ? r.json() : { coaches: [] })
       .then(d => setCoaches(d.coaches || []))
+      .catch(() => setCoaches([]))
       .finally(() => setLoading(false));
   }, []);
 
@@ -30,6 +31,7 @@ export default function ExplorePage() {
     fetch('/api/events?page=1&limit=20')
       .then(r => r.ok ? r.json() : { data: [] })
       .then(d => setEvents(d.data || []))
+      .catch(() => setEvents([]))
       .finally(() => setLoading(false));
   }, []);
 
@@ -99,7 +101,13 @@ export default function ExplorePage() {
               ))}
             </div>
           ) : (
-            <EmptyState icon="🔍" title="Aucun coach trouvé" description="Essayez d'élargir vos critères de recherche" />
+            <EmptyState
+              icon="🏋️"
+              title="Les coachs arrivent bientôt"
+              description="Nous construisons un réseau de coachs certifiés près de chez vous. Revenez vite ou devenez le premier !"
+              actionLabel="Devenir coach"
+              onAction={() => window.location.href = '/signup'}
+            />
           )
         ) : (
           events.length > 0 ? (
@@ -127,7 +135,13 @@ export default function ExplorePage() {
               ))}
             </div>
           ) : (
-            <EmptyState icon="🎪" title="Aucun événement" description="Revenez bientôt pour découvrir les prochains événements" />
+            <EmptyState
+              icon="🎯"
+              title="Pas encore d'événements"
+              description="Les premiers événements sportifs dans votre ville arrivent bientôt. En attendant, explorez les coachs disponibles !"
+              actionLabel="Voir les coachs"
+              onAction={() => setTab('coaches')}
+            />
           )
         )}
       </div>

@@ -10,7 +10,7 @@ import type {
   HierarchyInviteInput,
   HierarchyUpdateInput,
   MyHierarchy,
-} from './types.js';
+} from './types';
 
 // ─── Invite junior ──────────────────────────────────────────────────
 

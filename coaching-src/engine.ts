@@ -11,7 +11,7 @@ import type {
   CoachSearchResult,
   CreateCoachProfileInput,
   UpdateCoachProfileInput,
-} from './types.js';
+} from './types';
 
 const DEFAULT_LIMIT = 20;
 const DEFAULT_RADIUS_KM = 50;

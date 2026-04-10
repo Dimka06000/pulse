@@ -1,4 +1,4 @@
-export { COACHING_MANIFEST } from './module.js';
+export { COACHING_MANIFEST } from './module';
 
 export {
   searchCoaches,
@@ -8,20 +8,20 @@ export {
   getAllSpecialties,
   getMyCoachProfile,
   getCoachSessionTemplates,
-} from './engine.js';
+} from './engine';
 
-export * from './hierarchy.js';
-export * from './collaboration.js';
-export * from './endorsement.js';
-export * from './ratings.js';
-export * from './tracking.js';
-export * from './nutrition.js';
-export * from './training.js';
-export * from './events.js';
-export * from './scheduling.js';
-export * from './credits.js';
-export * from './commission.js';
-export * from './cancellation.js';
+export * from './hierarchy';
+export * from './collaboration';
+export * from './endorsement';
+export * from './ratings';
+export * from './tracking';
+export * from './nutrition';
+export * from './training';
+export * from './events';
+export * from './scheduling';
+export * from './credits';
+export * from './commission';
+export * from './cancellation';
 
 export type {
   // Enums
@@ -102,4 +102,4 @@ export type {
   RegisterEventInput,
   EventWithCounts,
   MatchCandidate,
-} from './types.js';
+} from './types';

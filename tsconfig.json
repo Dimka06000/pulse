@@ -15,7 +15,10 @@
     "incremental": true,
     "plugins": [{ "name": "next" }],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@oikos/coaching": ["./coaching-src/index.ts"],
+      "@oikos/coaching/*": ["./coaching-src/*"],
+      "@oikos/core": ["./src/lib/stubs/oikos-core.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

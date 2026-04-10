@@ -5,7 +5,7 @@
 // ============================================================
 
 import { type SupabaseClient } from '@supabase/supabase-js';
-import type { Endorsement, EndorsementCreateInput, EndorsementGroup } from './types.js';
+import type { Endorsement, EndorsementCreateInput, EndorsementGroup } from './types';
 
 // ─── Create endorsement ─────────────────────────────────────────────
 

@@ -20,9 +20,11 @@ test('Pulse — parcours complet utilisateur non connecté', async ({ page }) =>
   await page.goto(`${BASE}/onboarding`, { waitUntil: 'domcontentloaded', timeout: 60_000 });
   await page.screenshot({ path: 'e2e/screenshots/04-onboarding.png', fullPage: true });
 
-  // 5. Explore (page publique)
+  // 5. Explore (page publique — attendre fin du chargement)
   await page.goto(`${BASE}/explore`, { waitUntil: 'domcontentloaded', timeout: 60_000 });
   expect(page.url()).toContain('/explore');
+  // Wait for loading skeletons to disappear (data loaded or empty state shown)
+  await page.waitForSelector('.animate-pulse', { state: 'hidden', timeout: 15_000 }).catch(() => {});
   await page.screenshot({ path: 'e2e/screenshots/05-explore.png', fullPage: true });
 
   // 6. Mobile viewport

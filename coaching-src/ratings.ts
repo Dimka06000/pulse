@@ -12,7 +12,7 @@ import type {
   RatingReplyInput,
   RatingWithAthlete,
   RatingStats,
-} from './types.js';
+} from './types';
 
 // ─── Create rating ──────────────────────────────────────────────────
 
