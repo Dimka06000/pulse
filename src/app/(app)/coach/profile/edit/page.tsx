@@ -2,7 +2,7 @@ import { CoachProfileForm } from '@/components/coaches/coach-profile-form';
 
 export default function CoachProfileEditPage() {
   return (
-    <div className="py-4">
+    <div className="py-4 md:py-8">
       <CoachProfileForm />
     </div>
   );

@@ -92,19 +92,19 @@ export function CoachProfileForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-2xl font-semibold text-gray-900">Mon profil coach</h1>
+    <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-6 px-4 pb-24 md:px-0 md:pb-6">
+      <h1 className="text-xl font-extrabold text-text md:text-2xl">Mon profil coach</h1>
 
       <Textarea
         label="Bio"
-        placeholder="Presentez-vous en quelques lignes. Votre parcours, votre approche, ce qui vous motive..."
+        placeholder="Présentez-vous en quelques lignes. Votre parcours, votre approche, ce qui vous motive..."
         value={bio}
         onChange={(e) => setBio(e.target.value)}
         rows={4}
       />
 
       <div>
-        <label className="text-sm font-medium text-gray-700">Specialites</label>
+        <label className="text-sm font-medium text-text">Spécialités</label>
         <div className="mt-1.5">
           <SpecialtyTags
             selected={specialties}
@@ -115,7 +115,7 @@ export function CoachProfileForm() {
       </div>
 
       <Input
-        label="Tarif horaire (euros)"
+        label="Tarif horaire (€)"
         type="number"
         min={0}
         step={5}
@@ -125,11 +125,11 @@ export function CoachProfileForm() {
       />
 
       <div>
-        <label className="text-sm font-medium text-gray-700">Localisation</label>
-        <p className="text-xs text-gray-500 mb-2">
-          Entrez vos coordonnees pour apparaitre dans les recherches geographiques.
+        <label className="text-sm font-medium text-text">Localisation</label>
+        <p className="text-xs text-muted mb-2">
+          Entrez vos coordonnées pour apparaître dans les recherches géographiques.
         </p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Input
             label="Latitude"
             type="number"
@@ -150,7 +150,7 @@ export function CoachProfileForm() {
       </div>
 
       <Input
-        label="Rayon de deplacement (km)"
+        label="Rayon de déplacement (km)"
         type="number"
         min={1}
         max={200}
@@ -164,32 +164,32 @@ export function CoachProfileForm() {
           id="anonymous-reviews"
           checked={acceptsAnonymous}
           onChange={(e) => setAcceptsAnonymous(e.target.checked)}
-          className="h-4 w-4 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
+          className="h-5 w-5 rounded border-gray-300 text-brand-600 focus:ring-brand-500"
         />
-        <label htmlFor="anonymous-reviews" className="text-sm text-gray-700">
+        <label htmlFor="anonymous-reviews" className="text-sm text-text">
           Accepter les avis anonymes
         </label>
       </div>
 
       {error && (
-        <div className="rounded-lg bg-red-50 p-3 text-sm text-red-600">{error}</div>
+        <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600">{error}</div>
       )}
       {success && (
-        <div className="rounded-lg bg-green-50 p-3 text-sm text-green-600">
-          Profil mis a jour avec succes !
+        <div className="rounded-xl bg-green-50 p-4 text-sm text-green-600">
+          Profil mis à jour avec succès !
         </div>
       )}
 
-      <div className="flex gap-3">
-        <Button type="submit" disabled={saving}>
+      <div className="flex flex-col gap-3 sm:flex-row">
+        <Button type="submit" disabled={saving} className="w-full sm:w-auto">
           {saving ? 'Sauvegarde...' : 'Sauvegarder'}
         </Button>
         <Button
           type="button"
-          onClick={() => router.push('/dashboard')}
-          className="bg-gray-100 text-gray-700 hover:bg-gray-200"
+          onClick={() => router.push('/coach')}
+          className="w-full bg-surface text-muted hover:bg-surface/80 sm:w-auto"
         >
-          Retour au dashboard
+          Retour
         </Button>
       </div>
     </form>
