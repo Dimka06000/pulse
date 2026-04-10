@@ -9,15 +9,21 @@ interface OnboardingStepProps {
 }
 
 export function OnboardingStep({ step, totalSteps, children }: OnboardingStepProps) {
-  const [visible, setVisible] = useState(false);
+  const [visible, setVisible] = useState(true);
+  const [prevStep, setPrevStep] = useState(step);
+
+  // Only animate on step changes, not on initial mount
+  if (step !== prevStep) {
+    setPrevStep(step);
+    setVisible(false);
+  }
 
   useEffect(() => {
-    setVisible(false);
-    const t = requestAnimationFrame(() => {
-      requestAnimationFrame(() => setVisible(true));
-    });
-    return () => cancelAnimationFrame(t);
-  }, [step]);
+    if (!visible) {
+      const t = setTimeout(() => setVisible(true), 50);
+      return () => clearTimeout(t);
+    }
+  }, [visible]);
 
   return (
     <div className="relative flex min-h-dvh flex-col items-center justify-center px-6 py-12">
