@@ -212,7 +212,7 @@ async function tryCreateBooking(
       if (consumed) creditId = consumed.id;
     }
 
-    await supabase.from('bookings').insert({
+    const { data: newBooking } = await supabase.from('bookings').insert({
       session_template_id,
       athlete_id: userId,
       coach_id: coachId,
@@ -221,7 +221,47 @@ async function tryCreateBooking(
       status: 'confirmed',
       stripe_payment_id: paymentId,
       credit_id: creditId,
-    });
+    }).select('id').single();
+
+    // Send booking confirmation + coach notification
+    if (newBooking) {
+      const sessionDate = new Date(scheduled_at);
+      const dateStr = sessionDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+      const timeStr = sessionDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+      const [{ data: athleteProfile }, { data: coachProfile }, { data: templateInfo }] = await Promise.all([
+        supabase.from('profiles').select('email, first_name').eq('id', userId).single(),
+        supabase.from('profiles').select('email, first_name').eq('id', coachId).single(),
+        supabase.from('session_templates').select('title, price').eq('id', session_template_id).single(),
+      ]);
+
+      const title = templateInfo?.title || data.session_title || 'Séance';
+
+      if (athleteProfile?.email) {
+        import('@/lib/notifications').then(({ sendBookingConfirmation }) => {
+          sendBookingConfirmation(athleteProfile.email, {
+            athleteName: athleteProfile.first_name || 'Sportif',
+            coachName: coachProfile?.first_name || 'Coach',
+            sessionTitle: title,
+            date: dateStr,
+            time: timeStr,
+            price: templateInfo?.price ? `${templateInfo.price} €` : 'Inclus',
+          }).catch(console.error);
+        });
+      }
+
+      if (coachProfile?.email) {
+        import('@/lib/notifications').then(({ sendNewBookingCoach }) => {
+          sendNewBookingCoach(coachProfile.email, {
+            coachName: coachProfile.first_name || 'Coach',
+            athleteName: athleteProfile?.first_name || 'Un athlète',
+            sessionTitle: title,
+            date: dateStr,
+            time: timeStr,
+          }).catch(console.error);
+        });
+      }
+    }
   } catch (error) {
     console.error('Webhook booking creation error:', error);
   }

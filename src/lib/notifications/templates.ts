@@ -23,6 +23,32 @@ export interface PaymentConfirmedData {
   sessionTitle: string;
 }
 
+export interface SessionReminderData {
+  recipientName: string;
+  sessionTitle: string;
+  coachName: string;
+  date: string;
+  time: string;
+  location?: string;
+}
+
+export interface NewBookingCoachData {
+  coachName: string;
+  athleteName: string;
+  sessionTitle: string;
+  date: string;
+  time: string;
+}
+
+export interface WeeklyDigestData {
+  athleteName: string;
+  sessionsCount: number;
+  totalMinutes: number;
+  streakDays: number;
+  topSport: string;
+  suggestion: string;
+}
+
 // ---- Shared layout ----
 
 function layout(title: string, body: string): string {
@@ -42,7 +68,7 @@ function layout(title: string, body: string): string {
           <!-- Header -->
           <tr>
             <td style="background:#18181b;padding:24px 32px;">
-              <span style="font-size:20px;font-weight:700;color:#ffffff;letter-spacing:0.5px;">Coaching</span>
+              <span style="font-size:20px;font-weight:700;background:linear-gradient(90deg,#22c55e,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:0.5px;">Pulse</span>
             </td>
           </tr>
           <!-- Body -->
@@ -116,5 +142,52 @@ export function paymentConfirmedHtml(data: PaymentConfirmedData): string {
       <tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Montant</td><td style="padding:6px 0;font-size:14px;font-weight:600;color:#18181b;text-align:right;">${data.amount}</td></tr>
     </table>
     <p style="margin:0;font-size:14px;color:#52525b;">Merci pour votre confiance !</p>
+  `);
+}
+
+export function sessionReminderHtml(data: SessionReminderData): string {
+  return layout('Rappel — Séance demain', `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#18181b;">Rappel de séance</h1>
+    <p style="margin:0 0 24px;font-size:15px;color:#52525b;">Bonjour ${data.recipientName},</p>
+    <p style="margin:0 0 20px;font-size:15px;color:#3f3f46;">Votre séance a lieu demain. Pensez à vous préparer !</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fafafa;border-radius:8px;padding:20px;margin-bottom:24px;">
+      <tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Séance</td><td style="padding:6px 0;font-size:14px;font-weight:600;color:#18181b;text-align:right;">${data.sessionTitle}</td></tr>
+      <tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Coach</td><td style="padding:6px 0;font-size:14px;font-weight:600;color:#18181b;text-align:right;">${data.coachName}</td></tr>
+      <tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Date</td><td style="padding:6px 0;font-size:14px;font-weight:600;color:#18181b;text-align:right;">${data.date}</td></tr>
+      <tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Heure</td><td style="padding:6px 0;font-size:14px;font-weight:600;color:#18181b;text-align:right;">${data.time}</td></tr>
+      ${data.location ? `<tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Lieu</td><td style="padding:6px 0;font-size:14px;font-weight:600;color:#18181b;text-align:right;">${data.location}</td></tr>` : ''}
+    </table>
+    <p style="margin:0;font-size:14px;color:#52525b;">À demain !</p>
+  `);
+}
+
+export function newBookingCoachHtml(data: NewBookingCoachData): string {
+  return layout('Nouvelle réservation', `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#18181b;">Nouvelle réservation</h1>
+    <p style="margin:0 0 24px;font-size:15px;color:#52525b;">Bonjour ${data.coachName},</p>
+    <p style="margin:0 0 20px;font-size:15px;color:#3f3f46;">Un athlète vient de réserver une séance avec vous :</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fafafa;border-radius:8px;padding:20px;margin-bottom:24px;">
+      <tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Athlète</td><td style="padding:6px 0;font-size:14px;font-weight:600;color:#18181b;text-align:right;">${data.athleteName}</td></tr>
+      <tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Séance</td><td style="padding:6px 0;font-size:14px;font-weight:600;color:#18181b;text-align:right;">${data.sessionTitle}</td></tr>
+      <tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Date</td><td style="padding:6px 0;font-size:14px;font-weight:600;color:#18181b;text-align:right;">${data.date}</td></tr>
+      <tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Heure</td><td style="padding:6px 0;font-size:14px;font-weight:600;color:#18181b;text-align:right;">${data.time}</td></tr>
+    </table>
+    <p style="margin:0;font-size:14px;color:#52525b;">Consultez votre planning pour plus de détails.</p>
+  `);
+}
+
+export function weeklyDigestHtml(data: WeeklyDigestData): string {
+  return layout('Votre semaine Pulse', `
+    <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#18181b;">Votre semaine en résumé</h1>
+    <p style="margin:0 0 24px;font-size:15px;color:#52525b;">Bonjour ${data.athleteName},</p>
+    <p style="margin:0 0 20px;font-size:15px;color:#3f3f46;">Voici votre bilan de la semaine :</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fafafa;border-radius:8px;padding:20px;margin-bottom:24px;">
+      <tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Séances</td><td style="padding:6px 0;font-size:14px;font-weight:600;color:#18181b;text-align:right;">${data.sessionsCount}</td></tr>
+      <tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Durée totale</td><td style="padding:6px 0;font-size:14px;font-weight:600;color:#18181b;text-align:right;">${data.totalMinutes} min</td></tr>
+      <tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Série en cours</td><td style="padding:6px 0;font-size:14px;font-weight:600;color:#18181b;text-align:right;">${data.streakDays} jours 🔥</td></tr>
+      <tr><td style="padding:6px 0;font-size:14px;color:#71717a;">Sport principal</td><td style="padding:6px 0;font-size:14px;font-weight:600;color:#18181b;text-align:right;">${data.topSport}</td></tr>
+    </table>
+    ${data.suggestion ? `<p style="margin:0 0 16px;font-size:14px;padding:16px;background:#f0fdf4;border-radius:8px;color:#166534;">💡 <strong>Suggestion :</strong> ${data.suggestion}</p>` : ''}
+    <p style="margin:0;font-size:14px;color:#52525b;">Continuez sur cette lancée !</p>
   `);
 }

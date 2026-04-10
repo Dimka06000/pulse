@@ -145,6 +145,49 @@ export async function POST(request: NextRequest) {
     .select()
     .single();
 
+  // Send notifications (fire-and-forget)
+  if (booking) {
+    const sessionDate = new Date(scheduled_at);
+    const dateStr = sessionDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+    const timeStr = sessionDate.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+    // Get athlete & coach profiles for email
+    const [{ data: athleteProfile }, { data: coachProfile }, { data: templateInfo }] = await Promise.all([
+      adminClient.from('profiles').select('email, first_name').eq('id', user.id).single(),
+      adminClient.from('profiles').select('email, first_name').eq('id', coach_id).single(),
+      adminClient.from('session_templates').select('title, price').eq('id', session_template_id).single(),
+    ]);
+
+    const sessionTitle = templateInfo?.title || 'Séance';
+
+    // Confirm to athlete
+    if (athleteProfile?.email) {
+      import('@/lib/notifications').then(({ sendBookingConfirmation }) => {
+        sendBookingConfirmation(athleteProfile.email, {
+          athleteName: athleteProfile.first_name || 'Sportif',
+          coachName: coachProfile?.first_name || 'Coach',
+          sessionTitle,
+          date: dateStr,
+          time: timeStr,
+          price: templateInfo?.price ? `${templateInfo.price} €` : 'Inclus',
+        }).catch(console.error);
+      });
+    }
+
+    // Notify coach
+    if (coachProfile?.email) {
+      import('@/lib/notifications').then(({ sendNewBookingCoach }) => {
+        sendNewBookingCoach(coachProfile.email, {
+          coachName: coachProfile.first_name || 'Coach',
+          athleteName: athleteProfile?.first_name || 'Un athlète',
+          sessionTitle,
+          date: dateStr,
+          time: timeStr,
+        }).catch(console.error);
+      });
+    }
+  }
+
   if (insertError) {
     // Rollback credit on conflict
     if (insertError.code === '23P01') {
