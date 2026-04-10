@@ -163,15 +163,35 @@ export async function POST(
     }
   }
 
-  if (recipientEmail) {
-    const { data: senderProfile } = await admin.from('profiles').select('first_name').eq('id', user.id).single();
-    const senderName = senderProfile?.first_name || 'Quelqu\'un';
+  // Resolve recipient user_id for push
+  let recipientUserId: string | null = recipientId;
+  if (!recipientUserId && recipientCoachId) {
+    const { data: cp } = await admin.from('coach_profiles').select('user_id').eq('id', recipientCoachId).single();
+    if (cp) recipientUserId = cp.user_id;
+  }
 
+  const { data: senderProfile } = await admin.from('profiles').select('first_name').eq('id', user.id).single();
+  const senderName = senderProfile?.first_name || 'Quelqu\'un';
+
+  // Email notification (fire-and-forget)
+  if (recipientEmail) {
     import('@/lib/notifications/send').then(({ sendNewMessage }) => {
       sendNewMessage(recipientEmail!, {
         recipientName,
         senderName,
         messagePreview: content.trim().slice(0, 100),
+      }).catch(console.error);
+    });
+  }
+
+  // Push notification (fire-and-forget)
+  if (recipientUserId) {
+    import('@/lib/push/send').then(({ sendPushToUser }) => {
+      sendPushToUser(recipientUserId!, {
+        title: `Message de ${senderName}`,
+        body: content.trim().slice(0, 100),
+        url: `/messages/${conversationId}`,
+        tag: `chat-${conversationId}`,
       }).catch(console.error);
     });
   }

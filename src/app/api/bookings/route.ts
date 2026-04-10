@@ -186,6 +186,31 @@ export async function POST(request: NextRequest) {
         }).catch(console.error);
       });
     }
+
+    // Push notifications
+    import('@/lib/push/send').then(({ sendPushToUser }) => {
+      // Push to athlete
+      sendPushToUser(user.id, {
+        title: 'Réservation confirmée',
+        body: `${sessionTitle} — ${dateStr} à ${timeStr}`,
+        url: '/planning',
+        tag: `booking-${booking.id}`,
+      }).catch(console.error);
+
+      // Push to coach
+      if (coach_id) {
+        adminClient.from('coach_profiles').select('user_id').eq('id', coach_id).single().then(({ data: cp }) => {
+          if (cp) {
+            sendPushToUser(cp.user_id, {
+              title: 'Nouvelle réservation',
+              body: `${athleteProfile?.first_name || 'Un athlète'} — ${sessionTitle}`,
+              url: '/coach/sessions',
+              tag: `booking-coach-${booking.id}`,
+            }).catch(console.error);
+          }
+        });
+      }
+    });
   }
 
   if (insertError) {

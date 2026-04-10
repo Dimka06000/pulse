@@ -26,6 +26,23 @@ export async function POST(
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Push notification to post author (fire-and-forget)
+  db.from('feed_posts').select('user_id').eq('id', postId).single().then(({ data: post }) => {
+    if (post && post.user_id !== user.id) {
+      db.from('profiles').select('first_name').eq('id', user.id).single().then(({ data: sender }) => {
+        import('@/lib/push/send').then(({ sendPushToUser }) => {
+          sendPushToUser(post.user_id, {
+            title: `${sender?.first_name || 'Quelqu\'un'} vous a envoyé un kudos ${emoji}`,
+            body: 'Bravo pour votre activité !',
+            url: '/community',
+            tag: `kudos-${postId}`,
+          }).catch(console.error);
+        });
+      });
+    }
+  });
+
   return NextResponse.json({ kudos: data });
 }
 

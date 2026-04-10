@@ -56,3 +56,46 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 });
+
+// Push notification received
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+
+  const data = event.data.json();
+  const { title, body, icon, data: notifData, tag } = data;
+
+  event.waitUntil(
+    self.registration.showNotification(title || 'Pulse', {
+      body: body || '',
+      icon: icon || '/icon-192.png',
+      badge: '/icon-192.png',
+      tag: tag || 'pulse-default',
+      renotify: true,
+      data: notifData || { url: '/dashboard' },
+      actions: [
+        { action: 'open', title: 'Ouvrir' },
+      ],
+    })
+  );
+});
+
+// Notification click — open the app at the right URL
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const url = event.notification.data?.url || '/dashboard';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      // Focus existing tab if open
+      for (const client of clients) {
+        if (client.url.includes(self.location.origin) && 'focus' in client) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+      // Open new tab
+      return self.clients.openWindow(url);
+    })
+  );
+});
