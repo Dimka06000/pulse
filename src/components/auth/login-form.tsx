@@ -90,6 +90,11 @@ function LoginFormInner() {
             placeholder="Votre mot de passe"
             className="w-full rounded-lg border border-gray-300 px-4 py-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
+          <div className="mt-1 text-right">
+            <a href="/forgot-password" className="text-xs text-brand-600 hover:text-brand-700">
+              Mot de passe oublié ?
+            </a>
+          </div>
         </div>
         <button
           type="submit"
