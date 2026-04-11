@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, Cormorant_Garamond, JetBrains_Mono } from 'next/font/google';
 import { RegisterServiceWorker } from '@/components/pwa/register-sw';
+import { TestModeBanner } from '@/components/pulse/test-mode-banner';
 import './globals.css';
 
 const inter = Inter({
@@ -55,6 +56,7 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`${inter.variable} ${cormorant.variable} ${jetbrains.variable}`}>
       <body className="font-sans antialiased text-text bg-bg">
+        <TestModeBanner />
         {children}
         <RegisterServiceWorker />
       </body>
