@@ -108,8 +108,13 @@ export default function PlanningPage() {
   const [garminConnected, setGarminConnected] = useState(false);
   const [pushingWatch, setPushingWatch] = useState(false);
   const [pushResult, setPushResult] = useState<string | null>(null);
+  const [weekOffset, setWeekOffset] = useState(0);
 
-  const weekStart = useMemo(() => getWeekStart(new Date()), []);
+  const weekStart = useMemo(() => {
+    const d = getWeekStart(new Date());
+    d.setDate(d.getDate() + weekOffset * 7);
+    return d;
+  }, [weekOffset]);
 
   const fetchAll = useCallback(() => {
     if (!userId) return;
@@ -147,7 +152,7 @@ export default function PlanningPage() {
       })
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
-  }, [userId]);
+  }, [userId, weekOffset]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
 
@@ -224,14 +229,37 @@ export default function PlanningPage() {
       <div className="p-4 md:p-8">
         <h1 className="hidden md:block text-2xl font-extrabold text-text mb-6">Mon planning</h1>
 
-        {/* Week calendar */}
-        {loading ? (
-          <div className="h-24 animate-pulse rounded-2xl bg-surface mb-6" />
-        ) : (
-          <div className="mb-6">
-            <WeekCalendar items={items} weekStart={weekStart} />
+        {/* Week calendar with navigation */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <button
+              onClick={() => setWeekOffset(w => w - 1)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface text-muted hover:bg-surface/80 transition"
+            >
+              ←
+            </button>
+            <div className="text-center">
+              <button
+                onClick={() => setWeekOffset(0)}
+                className="text-xs font-semibold text-muted hover:text-text transition"
+              >
+                {weekOffset === 0 ? 'Cette semaine' :
+                 `${weekStart.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} — ${new Date(weekStart.getTime() + 6 * 86400000).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`}
+              </button>
+            </div>
+            <button
+              onClick={() => setWeekOffset(w => w + 1)}
+              className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface text-muted hover:bg-surface/80 transition"
+            >
+              →
+            </button>
           </div>
-        )}
+          {loading ? (
+            <div className="h-24 animate-pulse rounded-2xl bg-surface" />
+          ) : (
+            <WeekCalendar items={items} weekStart={weekStart} />
+          )}
+        </div>
 
         {/* Tabs + Push watch */}
         <div className="flex items-center justify-between mb-6">
