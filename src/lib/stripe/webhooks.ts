@@ -42,7 +42,6 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session) 
     .from('payments')
     .insert({
       user_id,
-      coach_id,
       amount_cents: amountTotal,
       status: 'succeeded',
       stripe_checkout_session_id: session.id,
@@ -62,7 +61,6 @@ export async function handleCheckoutCompleted(session: Stripe.Checkout.Session) 
       total_sessions: 1,
       used_sessions: 0,
       expires_at: null,
-      session_template_id: session_template_id || null,
     });
   }
 
