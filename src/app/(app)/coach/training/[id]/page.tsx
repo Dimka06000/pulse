@@ -92,7 +92,14 @@ export default function CourseDetailPage() {
     fetch('/api/training/courses')
       .then(r => r.json())
       .then(data => {
-        const found = (data.courses || []).find((c: any) => c.id === courseId);
+        let found = (data.courses || []).find((c: any) => c.id === courseId);
+        // Ensure modules is always an array (JSONB may come as string)
+        if (found && typeof found.modules === 'string') {
+          try { found = { ...found, modules: JSON.parse(found.modules) }; } catch { found = { ...found, modules: [] }; }
+        }
+        if (found && !Array.isArray(found.modules)) {
+          found = { ...found, modules: [] };
+        }
         if (found) {
           setCourse(found);
           const firstIncomplete = (found.modules || []).findIndex(

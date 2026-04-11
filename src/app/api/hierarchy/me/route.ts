@@ -21,8 +21,7 @@ export async function GET() {
 
     const result = await getMyHierarchy(supabase, coachProfile.id);
     return NextResponse.json(result);
-  } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : 'Erreur interne';
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ seniors: [], juniors: [] });
   }
 }

@@ -48,7 +48,7 @@ export async function getTrainingCourses(
       description: c.description,
       category: c.category,
       durationMinutes: c.duration_minutes,
-      modules: c.modules,
+      modules: typeof c.modules === 'string' ? JSON.parse(c.modules) : (c.modules || []),
       requiredForVerification: c.required_for_verification,
       badgeIcon: c.badge_icon,
       status: enrollment?.status || ('available' as const),

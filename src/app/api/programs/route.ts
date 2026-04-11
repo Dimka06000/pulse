@@ -9,9 +9,21 @@ export async function GET(req: NextRequest) {
   try {
     let query = supabase.from('training_programs').select('*, coach_profiles(display_name, avatar_url)');
 
-    const coachId = params.get('coach_id');
+    let coachId = params.get('coach_id');
     const published = params.get('published');
     const sport = params.get('sport');
+
+    // Handle "mine" — resolve to actual coach profile ID
+    if (coachId === 'mine') {
+      const authClient = await getSupabaseServerClient();
+      const { data: { user } } = await authClient.auth.getUser();
+      if (user) {
+        const { data: cp } = await supabase.from('coach_profiles').select('id').eq('user_id', user.id).single();
+        coachId = cp?.id || null;
+      } else {
+        coachId = null;
+      }
+    }
 
     if (coachId) {
       query = query.eq('coach_id', coachId);
