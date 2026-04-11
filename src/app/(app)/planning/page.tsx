@@ -105,6 +105,9 @@ export default function PlanningPage() {
   const [items, setItems] = useState<PlanningItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [garminConnected, setGarminConnected] = useState(false);
+  const [pushingWatch, setPushingWatch] = useState(false);
+  const [pushResult, setPushResult] = useState<string | null>(null);
 
   const weekStart = useMemo(() => getWeekStart(new Date()), []);
 
@@ -147,6 +150,35 @@ export default function PlanningPage() {
   }, [userId]);
 
   useEffect(() => { fetchAll(); }, [fetchAll]);
+
+  // Check Garmin connection
+  useEffect(() => {
+    fetch('/api/connectors')
+      .then(r => r.ok ? r.json() : { connections: [] })
+      .then(d => {
+        const conns = d.connections || [];
+        setGarminConnected(conns.some((c: any) => c.provider === 'garmin' && c.is_active));
+      })
+      .catch(() => {});
+  }, []);
+
+  const handlePushWatch = async () => {
+    setPushingWatch(true);
+    setPushResult(null);
+    try {
+      const res = await fetch('/api/planning/push-watch', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        setPushResult(`✅ ${data.pushed} séance${data.pushed > 1 ? 's' : ''} envoyée${data.pushed > 1 ? 's' : ''} !`);
+      } else {
+        setPushResult(`❌ ${data.error}`);
+      }
+      setTimeout(() => setPushResult(null), 5000);
+    } catch {
+      setPushResult('❌ Erreur de connexion');
+    }
+    setPushingWatch(false);
+  };
 
   const now = new Date();
   const upcoming = items.filter(i => new Date(i.scheduled_at) > now && i.status !== 'cancelled' && i.status !== 'completed');
@@ -201,15 +233,31 @@ export default function PlanningPage() {
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          <button onClick={() => setTab('upcoming')} className={`rounded-full px-5 py-2 text-sm font-semibold transition ${tab === 'upcoming' ? 'bg-gradient-to-r from-brand-500 to-cyan-500 text-white' : 'bg-surface text-muted'}`}>
-            A venir ({upcoming.length})
-          </button>
-          <button onClick={() => setTab('past')} className={`rounded-full px-5 py-2 text-sm font-semibold transition ${tab === 'past' ? 'bg-gradient-to-r from-brand-500 to-cyan-500 text-white' : 'bg-surface text-muted'}`}>
-            Passees ({past.length})
-          </button>
+        {/* Tabs + Push watch */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex gap-2">
+            <button onClick={() => setTab('upcoming')} className={`rounded-full px-5 py-2 text-sm font-semibold transition ${tab === 'upcoming' ? 'bg-gradient-to-r from-brand-500 to-cyan-500 text-white' : 'bg-surface text-muted'}`}>
+              À venir ({upcoming.length})
+            </button>
+            <button onClick={() => setTab('past')} className={`rounded-full px-5 py-2 text-sm font-semibold transition ${tab === 'past' ? 'bg-gradient-to-r from-brand-500 to-cyan-500 text-white' : 'bg-surface text-muted'}`}>
+              Passées ({past.length})
+            </button>
+          </div>
+          {garminConnected && upcoming.length > 0 && (
+            <button
+              onClick={handlePushWatch}
+              disabled={pushingWatch}
+              className="flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 disabled:opacity-50"
+            >
+              ⌚ {pushingWatch ? 'Envoi...' : 'Sur ma montre'}
+            </button>
+          )}
         </div>
+        {pushResult && (
+          <div className={`mb-4 rounded-xl p-3 text-sm font-medium ${pushResult.startsWith('✅') ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+            {pushResult}
+          </div>
+        )}
 
         {loading ? (
           <div className="space-y-3">{[1,2,3].map(i => <div key={i} className="h-20 animate-pulse rounded-xl bg-surface" />)}</div>
@@ -269,9 +317,9 @@ export default function PlanningPage() {
         ) : (
           <EmptyState
             icon="📅"
-            title={tab === 'upcoming' ? 'Aucune seance prevue' : 'Pas encore de seance'}
-            description={tab === 'upcoming' ? 'Planifiez votre premiere seance pour commencer' : 'Vos seances passees apparaitront ici'}
-            actionLabel={tab === 'upcoming' ? 'Nouvelle seance' : undefined}
+            title={tab === 'upcoming' ? 'Aucune séance prévue' : 'Pas encore de séance'}
+            description={tab === 'upcoming' ? 'Planifiez votre première séance pour commencer' : 'Vos séances passées apparaîtront ici'}
+            actionLabel={tab === 'upcoming' ? 'Nouvelle séance' : undefined}
             onAction={tab === 'upcoming' ? () => setShowModal(true) : undefined}
           />
         )}
