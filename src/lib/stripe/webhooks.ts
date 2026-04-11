@@ -99,11 +99,13 @@ export async function handleInvoicePaid(invoice: Stripe.Invoice) {
 
   const { data: sub } = await supabase
     .from('subscriptions')
-    .select('*')
+    .select('*, pricing_plans!inner(coach_id, sessions_per_week)')
     .eq('stripe_subscription_id', subscriptionId)
     .single();
 
   if (!sub) return;
+
+  const plan = sub.pricing_plans as { coach_id: string; sessions_per_week: number | null };
 
   // Idempotency
   const { data: existingPayment } = await supabase
@@ -120,20 +122,21 @@ export async function handleInvoicePaid(invoice: Stripe.Invoice) {
   const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId as string);
   const { periodStart, periodEnd } = getSubscriptionPeriod(stripeSubscription);
 
-  await supabase.from('payments').insert({
+  const { data: renewalPayment } = await supabase.from('payments').insert({
     user_id: sub.user_id,
-    coach_id: sub.coach_id,
+    pricing_plan_id: sub.pricing_plan_id,
     amount_cents: invoice.amount_paid || 0,
     status: 'succeeded',
+    payment_type: 'subscription',
     stripe_invoice_id: invoice.id,
-  });
+  }).select('id').single();
 
-  // Subscription credits: sessions_per_week * 4
+  // Subscription credits: sessions_per_week * 4 (monthly)
   await supabase.from('user_credits').insert({
     user_id: sub.user_id,
-    coach_id: sub.coach_id,
-    payment_id: null,
-    total_sessions: sub.sessions_per_period || 4,
+    coach_id: plan.coach_id,
+    payment_id: renewalPayment?.id || null,
+    total_sessions: (plan.sessions_per_week || 1) * 4,
     used_sessions: 0,
     expires_at: new Date(periodEnd * 1000).toISOString(),
   });
