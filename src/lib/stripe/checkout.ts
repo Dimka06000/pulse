@@ -11,7 +11,7 @@ export type CheckoutParams = {
   paymentType: 'one_time' | 'subscription';
   stripePriceId: string | null;    // For subscriptions only
   customerId: string;              // Athlete's Stripe customer ID
-  connectedAccountId: string;      // Coach's Stripe Connect account
+  connectedAccountId: string | null; // Coach's Stripe Connect account (null = direct payment)
   applicationFeeCents: number;     // Pre-calculated platform fee
   userId: string;
   coachId: string;

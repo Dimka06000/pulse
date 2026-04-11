@@ -47,12 +47,8 @@ export async function POST(request: NextRequest) {
     .eq('id', coach_id)
     .single();
 
-  if (!coachProfile?.stripe_account_id) {
-    return NextResponse.json(
-      { error: 'Ce coach n\'a pas encore configuré ses paiements' },
-      { status: 400 }
-    );
-  }
+  // If coach has no Stripe Connect, payment goes directly to platform
+  const hasConnect = !!coachProfile?.stripe_account_id;
 
   // Get platform fee
   const { data: feeSetting } = await adminClient
@@ -104,8 +100,8 @@ export async function POST(request: NextRequest) {
       paymentType: 'one_time',
       stripePriceId: null,
       customerId,
-      connectedAccountId: coachProfile.stripe_account_id,
-      applicationFeeCents: commission.platformFeeCents,
+      connectedAccountId: hasConnect ? coachProfile.stripe_account_id : null,
+      applicationFeeCents: hasConnect ? commission.platformFeeCents : 0,
       userId: user.id,
       coachId: coach_id,
       sessionTemplateId: session_template_id,

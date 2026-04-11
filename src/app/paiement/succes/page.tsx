@@ -17,10 +17,10 @@ export default function PaymentSuccessPage() {
         Votre réservation est confirmée. Vous recevrez un email de confirmation.
       </p>
       <Link
-        href="/bookings"
+        href="/planning"
         className="inline-block bg-brand-500 text-white px-6 py-3 rounded-xl font-medium hover:bg-brand-600 transition-colors"
       >
-        Voir mes réservations
+        Voir mon planning
       </Link>
     </div>
   );

@@ -118,7 +118,7 @@ export function BookingWizard({
         return;
       }
 
-      router.push('/bookings?success=true');
+      router.push('/planning?booked=true');
     } catch {
       setError('Erreur lors de la réservation');
     } finally {
