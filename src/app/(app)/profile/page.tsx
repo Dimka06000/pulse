@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { AppHeader } from '@/components/pulse/app-header';
 import { Button } from '@/components/pulse/button';
 import { Badge } from '@/components/pulse/badge';
+import { AddressAutocomplete } from '@/components/pulse/address-autocomplete';
 import { useAuthStore } from '@/stores/auth';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import Link from 'next/link';
@@ -99,6 +100,25 @@ export default function ProfilePage() {
               <span className="text-muted">→</span>
             </div>
           </Link>
+
+          <div className="rounded-xl border border-border bg-white p-4">
+            <p className="text-sm font-semibold text-text mb-3">Ma localisation</p>
+            <AddressAutocomplete
+              placeholder="Rechercher votre ville..."
+              onSelect={async (result) => {
+                await fetch('/api/profile', {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    city: result.city,
+                    postal_code: result.postalCode,
+                    lat: result.lat,
+                    lng: result.lng,
+                  }),
+                });
+              }}
+            />
+          </div>
 
           <div className="rounded-xl border border-border bg-white p-4">
             <p className="text-sm font-semibold text-text mb-1">Paramètres</p>

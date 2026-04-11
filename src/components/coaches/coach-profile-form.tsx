@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { SpecialtyTags } from '@/components/coaches/specialty-tags';
+import { AddressAutocomplete } from '@/components/pulse/address-autocomplete';
 import { api } from '@/lib/api';
 
 interface CoachProfileData {
@@ -30,6 +31,7 @@ export function CoachProfileForm() {
   const [bio, setBio] = useState('');
   const [specialties, setSpecialties] = useState<string[]>([]);
   const [hourlyRate, setHourlyRate] = useState('');
+  const [address, setAddress] = useState('');
   const [lat, setLat] = useState('');
   const [lng, setLng] = useState('');
   const [radius, setRadius] = useState('10');
@@ -124,30 +126,16 @@ export function CoachProfileForm() {
         onChange={(e) => setHourlyRate(e.target.value)}
       />
 
-      <div>
-        <label className="text-sm font-medium text-text">Localisation</label>
-        <p className="text-xs text-muted mb-2">
-          Entrez vos coordonnées pour apparaître dans les recherches géographiques.
-        </p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input
-            label="Latitude"
-            type="number"
-            step="any"
-            placeholder="48.8566"
-            value={lat}
-            onChange={(e) => setLat(e.target.value)}
-          />
-          <Input
-            label="Longitude"
-            type="number"
-            step="any"
-            placeholder="2.3522"
-            value={lng}
-            onChange={(e) => setLng(e.target.value)}
-          />
-        </div>
-      </div>
+      <AddressAutocomplete
+        label="Adresse / Zone d'intervention"
+        value={address}
+        placeholder="Rechercher votre adresse..."
+        onSelect={(result) => {
+          setAddress(result.address);
+          setLat(String(result.lat));
+          setLng(String(result.lng));
+        }}
+      />
 
       <Input
         label="Rayon de déplacement (km)"
