@@ -38,8 +38,8 @@ export async function POST() {
     const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3100';
     const url = await createAccountLink(
       accountId,
-      `${origin}/stripe?success=true`,
-      `${origin}/stripe?refresh=true`
+      `${origin}/coach/stripe?return=true`,
+      `${origin}/coach/stripe?return=true`
     );
 
     return NextResponse.json({ url });
