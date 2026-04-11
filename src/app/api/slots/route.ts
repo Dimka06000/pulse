@@ -14,6 +14,19 @@ export async function GET(request: NextRequest) {
   const coachId = searchParams.get('coach_id');
   const dateParam = searchParams.get('date');
   const sessionTemplateId = searchParams.get('session_template_id');
+  const listDays = searchParams.get('list_days');
+
+  // Mode: list available days (returns day_of_week numbers)
+  if (coachId && listDays === 'true') {
+    const { data: slots } = await supabase
+      .from('availability_slots')
+      .select('day_of_week')
+      .eq('coach_id', coachId)
+      .eq('is_active', true);
+
+    const availableDays = [...new Set((slots || []).map(s => s.day_of_week))];
+    return NextResponse.json({ availableDays });
+  }
 
   if (!coachId || !dateParam || !sessionTemplateId) {
     return NextResponse.json(

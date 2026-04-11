@@ -83,11 +83,11 @@ export async function POST(request: NextRequest) {
   // Get or create athlete's Stripe customer
   const { data: profile } = await adminClient
     .from('profiles')
-    .select('name')
+    .select('first_name, last_name')
     .eq('id', user.id)
     .single();
 
-  const userName = profile?.name || user.email || 'Athlète';
+  const userName = [profile?.first_name, profile?.last_name].filter(Boolean).join(' ') || user.email || 'Athlète';
   const customerId = await getOrCreateStripeCustomer(user.id, user.email!, userName);
 
   const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3100';
