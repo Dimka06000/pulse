@@ -26,8 +26,10 @@ const exploreNav: NavItem[] = [
 
 const coachNav: NavItem[] = [
   { href: '/coach', icon: '📊', label: 'Tableau de bord' },
+  { href: '/coach/agenda', icon: '📅', label: 'Agenda' },
   { href: '/coach/clients', icon: '👥', label: 'Mes clients' },
   { href: '/coach/sessions', icon: '📋', label: 'Mes séances' },
+  { href: '/coach/pricing', icon: '🏷️', label: 'Tarifs' },
   { href: '/coach/revenue', icon: '💰', label: 'Revenus' },
   { href: '/coach/reviews', icon: '⭐', label: 'Avis' },
   { href: '/coach/availability', icon: '🕐', label: 'Disponibilités' },

@@ -10,6 +10,7 @@ type NavItem = { href: string; icon: string; label: string };
 
 const coachSidebarNav: NavItem[] = [
   { href: '/coach', icon: '📊', label: 'Tableau de bord' },
+  { href: '/coach/agenda', icon: '📅', label: 'Agenda' },
   { href: '/coach/clients', icon: '👥', label: 'Mes clients' },
   { href: '/coach/sessions', icon: '📋', label: 'Mes séances' },
   { href: '/coach/revenue', icon: '💰', label: 'Revenus' },
