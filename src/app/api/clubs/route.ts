@@ -118,7 +118,6 @@ export async function POST(req: NextRequest) {
         lng,
         address,
         join_mode,
-        owner_id: user.id,
       })
       .select()
       .single();

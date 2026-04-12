@@ -110,7 +110,7 @@ export const useClubsStore = create<ClubsState>()(
           const res = await fetch(`/api/clubs?${searchParams}`);
           const json = await res.json();
           if (!res.ok) throw new Error(json.error ?? 'Erreur chargement des clubs');
-          set({ clubs: json.data, totalCount: json.count, loading: false });
+          set({ clubs: json.data || json.clubs || [], totalCount: json.count ?? (json.data || json.clubs || []).length, loading: false });
         } catch (err: any) {
           set({ error: err.message, loading: false });
         }
@@ -152,7 +152,8 @@ export const useClubsStore = create<ClubsState>()(
           const json = await res.json();
           if (!res.ok) throw new Error(json.error ?? 'Erreur chargement de mes clubs');
 
-          const myClubs: (Club & { role: string })[] = json.data;
+          const raw = json.data || json.clubs || [];
+          const myClubs: (Club & { role: string })[] = raw.map((c: any) => ({ ...c, role: c.role || c.my_role }));
           set({ myClubs });
 
           // Auto-set activeClubSlug if none selected and user has clubs
