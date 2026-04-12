@@ -88,7 +88,7 @@ export async function POST(
         user_id: user.id,
         activity_type: 'club_post',
         club_id: id,
-        content: content.trim(),
+        description: content.trim(),
       })
       .select()
       .single();
