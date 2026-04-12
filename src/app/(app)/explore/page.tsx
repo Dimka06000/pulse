@@ -7,14 +7,16 @@ import { Button } from '@/components/pulse/button';
 import { EmptyState } from '@/components/pulse/empty-state';
 import { SportGradient } from '@/components/pulse/sport-gradient';
 import { SPORT_EMOJIS, type Sport } from '@/lib/sports';
+import { ClubCard } from '@/components/clubs/club-card';
 import Link from 'next/link';
 
-type Tab = 'coaches' | 'events';
+type Tab = 'coaches' | 'events' | 'clubs';
 
 export default function ExplorePage() {
   const [tab, setTab] = useState<Tab>('coaches');
   const [coaches, setCoaches] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
+  const [clubs, setClubs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadCoaches = useCallback(() => {
@@ -35,10 +37,20 @@ export default function ExplorePage() {
       .finally(() => setLoading(false));
   }, []);
 
+  const loadClubs = useCallback(() => {
+    setLoading(true);
+    fetch('/api/clubs?limit=20')
+      .then(r => r.ok ? r.json() : { clubs: [] })
+      .then(d => setClubs(d.clubs || []))
+      .catch(() => setClubs([]))
+      .finally(() => setLoading(false));
+  }, []);
+
   useEffect(() => {
     if (tab === 'coaches') loadCoaches();
-    else loadEvents();
-  }, [tab, loadCoaches, loadEvents]);
+    else if (tab === 'events') loadEvents();
+    else loadClubs();
+  }, [tab, loadCoaches, loadEvents, loadClubs]);
 
   return (
     <>
@@ -68,12 +80,28 @@ export default function ExplorePage() {
           >
             🎪 Événements
           </button>
+          <button
+            onClick={() => setTab('clubs')}
+            className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
+              tab === 'clubs'
+                ? 'bg-gradient-to-r from-brand-500 to-cyan-500 text-white'
+                : 'bg-surface text-muted hover:text-text'
+            }`}
+          >
+            🏟️ Clubs
+          </button>
         </div>
 
         {loading ? (
-          <div className="space-y-4">
-            {[1,2,3].map(i => <div key={i} className="h-32 animate-pulse rounded-2xl bg-surface" />)}
-          </div>
+          tab === 'clubs' ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {[1,2,3].map(i => <div key={i} className="h-24 animate-pulse rounded-xl bg-surface" />)}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {[1,2,3].map(i => <div key={i} className="h-32 animate-pulse rounded-2xl bg-surface" />)}
+            </div>
+          )
         ) : tab === 'coaches' ? (
           coaches.length > 0 ? (
             <div className="space-y-4">
@@ -109,7 +137,7 @@ export default function ExplorePage() {
               onAction={() => window.location.href = '/signup'}
             />
           )
-        ) : (
+        ) : tab === 'events' ? (
           events.length > 0 ? (
             <div className="space-y-4">
               {events.map((e: any) => (
@@ -141,6 +169,22 @@ export default function ExplorePage() {
               description="Les premiers événements sportifs dans votre ville arrivent bientôt. En attendant, explorez les coachs disponibles !"
               actionLabel="Voir les coachs"
               onAction={() => setTab('coaches')}
+            />
+          )
+        ) : (
+          clubs.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              {clubs.map((club: any) => (
+                <ClubCard key={club.id} club={club} />
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              icon="🏟️"
+              title="Pas encore de clubs"
+              description="Les clubs sportifs de votre région arrivent bientôt. Créez le premier club de votre sport !"
+              actionLabel="Créer un club"
+              onAction={() => window.location.href = '/clubs/create'}
             />
           )
         )}
