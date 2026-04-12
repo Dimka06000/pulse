@@ -13,7 +13,7 @@ import type { Sport } from '@/lib/sports';
 
 interface PlanningItem {
   id: string;
-  type: 'booking' | 'solo';
+  type: 'booking' | 'solo' | 'club_event';
   title: string;
   sport?: string;
   scheduled_at: string;
@@ -123,8 +123,9 @@ export default function PlanningPage() {
     Promise.all([
       fetch('/api/bookings/me').then(r => r.ok ? r.json() : []).catch(() => []),
       fetch('/api/solo-sessions').then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch('/api/clubs/my-events').then(r => r.ok ? r.json() : []).catch(() => []),
     ])
-      .then(([bookings, solos]) => {
+      .then(([bookings, solos, clubEvents]) => {
         const bookingItems: PlanningItem[] = (Array.isArray(bookings) ? bookings : []).map((b: any) => ({
           id: b.id,
           type: 'booking' as const,
@@ -146,7 +147,21 @@ export default function PlanningPage() {
           completed: s.completed,
         }));
 
-        setItems([...bookingItems, ...soloItems].sort(
+        const clubEventItems: PlanningItem[] = (Array.isArray(clubEvents) ? clubEvents : []).map((e: any) => {
+          const startMs = new Date(e.starts_at).getTime();
+          const endMs = e.ends_at ? new Date(e.ends_at).getTime() : startMs + 60 * 60 * 1000;
+          return {
+            id: e.id,
+            type: 'club_event' as const,
+            title: `🏟️ ${e.title}${e.club_name ? ` · ${e.club_name}` : ''}`,
+            sport: e.sport || '',
+            scheduled_at: e.starts_at,
+            duration: Math.round((endMs - startMs) / 60000),
+            status: 'confirmed',
+          };
+        });
+
+        setItems([...bookingItems, ...soloItems, ...clubEventItems].sort(
           (a, b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime()
         ));
       })
