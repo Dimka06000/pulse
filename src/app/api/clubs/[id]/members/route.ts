@@ -5,10 +5,11 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 const ROLE_ORDER = ['founder', 'coach_admin', 'coach', 'captain', 'member'];
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+  const statusFilter = req.nextUrl.searchParams.get('status') ?? 'active';
 
   const authClient = await getSupabaseServerClient();
   const { data: { user } } = await authClient.auth.getUser();
@@ -21,7 +22,7 @@ export async function GET(
       .from('club_members')
       .select('*, profiles(first_name, last_name, avatar_url)')
       .eq('club_id', id)
-      .eq('status', 'active');
+      .eq('status', statusFilter);
 
     if (error) throw error;
 

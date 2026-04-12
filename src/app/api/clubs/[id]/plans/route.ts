@@ -4,19 +4,25 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { getStripeClient } from '@/lib/stripe/client';
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
+  const all = req.nextUrl.searchParams.get('all') === 'true';
   const supabase = getSupabaseAdminClient();
 
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('club_membership_plans')
       .select('*')
       .eq('club_id', id)
-      .eq('is_active', true)
       .order('sort_order', { ascending: true });
+
+    if (!all) {
+      query = query.eq('is_active', true);
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
     return NextResponse.json(data ?? []);
