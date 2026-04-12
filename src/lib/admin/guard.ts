@@ -12,11 +12,11 @@ export async function requireAdmin() {
   const admin = getSupabaseAdminClient();
   const { data: profile } = await admin
     .from('profiles')
-    .select('role')
+    .select('role, is_admin')
     .eq('id', user.id)
     .single();
 
-  if (profile?.role !== 'admin')
+  if (!profile?.is_admin)
     return { error: 'Accès refusé', status: 403, user: null };
 
   return { error: null, status: 200, user };
