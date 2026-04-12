@@ -43,7 +43,7 @@ export default function CreateClubPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (userRole !== 'coach') {
+    if (userRole !== 'coach' && userRole !== 'both') {
       router.replace('/clubs');
     }
   }, [userRole, router]);
@@ -80,7 +80,7 @@ export default function CreateClubPage() {
     }
   }
 
-  if (userRole !== 'coach') return null;
+  if (userRole !== 'coach' && userRole !== 'both') return null;
 
   return (
     <div className="mx-auto max-w-2xl p-6">
