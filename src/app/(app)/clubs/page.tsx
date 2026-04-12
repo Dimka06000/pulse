@@ -43,7 +43,8 @@ function SkeletonCard() {
 }
 
 export default function ClubsPage() {
-  const { clubs, loading, fetchClubs } = useClubsStore();
+  const { clubs: rawClubs, loading, fetchClubs } = useClubsStore();
+  const clubs = rawClubs || [];
   const { userRole } = useAuthStore();
 
   const [search, setSearch] = useState('');

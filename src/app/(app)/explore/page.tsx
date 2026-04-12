@@ -40,8 +40,8 @@ export default function ExplorePage() {
   const loadClubs = useCallback(() => {
     setLoading(true);
     fetch('/api/clubs?limit=20')
-      .then(r => r.ok ? r.json() : { clubs: [] })
-      .then(d => setClubs(d.clubs || []))
+      .then(r => r.ok ? r.json() : { data: [] })
+      .then(d => setClubs(d.data || []))
       .catch(() => setClubs([]))
       .finally(() => setLoading(false));
   }, []);

@@ -76,7 +76,8 @@ export function Sidebar() {
   const { userRole, userId } = useAuthStore();
   const isCoach = userRole === 'coach' || userRole === 'both';
 
-  const { myClubs, activeClubSlug, setActiveClub, fetchMyClubs } = useClubsStore();
+  const { myClubs: rawMyClubs, activeClubSlug, setActiveClub, fetchMyClubs } = useClubsStore();
+  const myClubs = rawMyClubs || [];
 
   useEffect(() => {
     if (userId) fetchMyClubs();
