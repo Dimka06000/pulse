@@ -15,8 +15,15 @@ function getSubscriptionPeriod(subscription: Stripe.Subscription) {
 export async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const supabase = getSupabaseAdminClient();
   const metadata = session.metadata || {};
-  const { user_id, coach_id, session_template_id, payment_type } = metadata;
+  const { user_id, payment_type } = metadata;
 
+  // Club membership flow
+  if (payment_type === 'club_membership') {
+    return handleClubMembershipCheckout(session, metadata);
+  }
+
+  // Existing coach flow
+  const { coach_id, session_template_id } = metadata;
   if (!user_id || !coach_id) {
     console.error('Webhook: metadata missing in checkout.session.completed');
     return;
@@ -154,7 +161,7 @@ export async function handleSubscriptionUpdated(subscription: Stripe.Subscriptio
   const supabase = getSupabaseAdminClient();
   const { periodStart, periodEnd } = getSubscriptionPeriod(subscription);
 
-  await supabase
+  const { data: updated } = await supabase
     .from('subscriptions')
     .update({
       status: subscription.status,
@@ -162,15 +169,86 @@ export async function handleSubscriptionUpdated(subscription: Stripe.Subscriptio
       current_period_end: new Date(periodEnd * 1000).toISOString(),
       cancel_at_period_end: subscription.cancel_at_period_end,
     })
-    .eq('stripe_subscription_id', subscription.id);
+    .eq('stripe_subscription_id', subscription.id)
+    .select('id');
+
+  if (!updated?.length) {
+    // Fallthrough to club subscriptions
+    await supabase
+      .from('club_subscriptions')
+      .update({
+        status: subscription.status === 'active' ? 'active'
+          : subscription.status === 'past_due' ? 'past_due' : 'cancelled',
+        current_period_end: new Date(periodEnd * 1000).toISOString(),
+      })
+      .eq('stripe_subscription_id', subscription.id);
+  }
 }
 
 export async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   const supabase = getSupabaseAdminClient();
-  await supabase
+
+  const { data: deleted } = await supabase
     .from('subscriptions')
     .update({ status: 'cancelled' })
-    .eq('stripe_subscription_id', subscription.id);
+    .eq('stripe_subscription_id', subscription.id)
+    .select('id');
+
+  if (!deleted?.length) {
+    await supabase
+      .from('club_subscriptions')
+      .update({ status: 'cancelled' })
+      .eq('stripe_subscription_id', subscription.id);
+  }
+}
+
+// ---- Helper: handle club membership checkout ----
+
+async function handleClubMembershipCheckout(session: Stripe.Checkout.Session, metadata: Record<string, string>) {
+  const supabase = getSupabaseAdminClient();
+  const { user_id, club_id, plan_id, club_member_id } = metadata;
+  if (!user_id || !club_id) return;
+
+  // Idempotency
+  const { data: existing } = await supabase
+    .from('club_subscriptions')
+    .select('id')
+    .eq('stripe_checkout_session_id', session.id)
+    .maybeSingle();
+  if (existing) return;
+
+  // Create payment record
+  const amountTotal = session.amount_total || 0;
+  await supabase.from('payments').insert({
+    user_id,
+    amount_cents: amountTotal,
+    status: 'succeeded',
+    payment_type: 'club_membership',
+    stripe_checkout_session_id: session.id,
+  });
+
+  // Lookup plan interval
+  const { data: plan } = await supabase
+    .from('club_membership_plans')
+    .select('interval')
+    .eq('id', plan_id)
+    .single();
+  const isLifetime = plan?.interval === 'once';
+
+  const subscriptionId = typeof session.subscription === 'string'
+    ? session.subscription
+    : session.subscription?.id || null;
+
+  await supabase.from('club_subscriptions').insert({
+    club_id,
+    user_id,
+    club_member_id: club_member_id || null,
+    plan_id,
+    stripe_subscription_id: isLifetime ? null : subscriptionId,
+    stripe_checkout_session_id: session.id,
+    status: isLifetime ? 'lifetime' : 'active',
+    current_period_end: isLifetime ? null : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  });
 }
 
 // ---- Helper: create booking from webhook metadata ----
