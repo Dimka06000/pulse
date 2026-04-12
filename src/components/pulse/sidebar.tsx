@@ -2,7 +2,9 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useEffect } from 'react';
 import { useAuthStore } from '@/stores/auth';
+import { useClubsStore } from '@/stores/clubs';
 
 type NavItem = { href: string; icon: string; label: string };
 
@@ -22,6 +24,7 @@ const exploreNav: NavItem[] = [
   { href: '/explore/programs', icon: '📝', label: 'Programmes' },
   { href: '/community', icon: '🏆', label: 'Communauté' },
   { href: '/messages', icon: '💬', label: 'Messages' },
+  { href: '/clubs', icon: '🏟️', label: 'Clubs' },
 ];
 
 const coachNav: NavItem[] = [
@@ -70,8 +73,29 @@ function NavSection({ title, items, titleColor }: { title: string; items: NavIte
 }
 
 export function Sidebar() {
-  const { userRole } = useAuthStore();
+  const { userRole, userId } = useAuthStore();
   const isCoach = userRole === 'coach' || userRole === 'both';
+
+  const { myClubs, activeClubSlug, setActiveClub, fetchMyClubs } = useClubsStore();
+
+  useEffect(() => {
+    if (userId) fetchMyClubs();
+  }, [userId, fetchMyClubs]);
+
+  const activeSlug = activeClubSlug || myClubs[0]?.slug;
+  const activeClubMembership = myClubs.find((c) => c.slug === activeSlug);
+  const isClubAdmin =
+    activeClubMembership?.role === 'founder' || activeClubMembership?.role === 'coach_admin';
+
+  const clubNav: NavItem[] = activeSlug
+    ? [
+        { href: `/clubs/${activeSlug}`, icon: '🏠', label: 'Mon club' },
+        { href: `/clubs/${activeSlug}/feed`, icon: '📰', label: 'Fil' },
+        { href: `/clubs/${activeSlug}/events`, icon: '📅', label: 'Événements' },
+        { href: `/clubs/${activeSlug}/members`, icon: '👥', label: 'Membres' },
+        { href: `/clubs/${activeSlug}/announcements`, icon: '📢', label: 'Annonces' },
+      ]
+    : [];
 
   return (
     <aside className="hidden md:flex md:w-60 md:flex-col md:border-r md:border-border/50 md:bg-white">
@@ -88,6 +112,37 @@ export function Sidebar() {
       <div className="flex-1 overflow-y-auto py-3">
         <NavSection title="Mon sport" items={athleteNav} />
         <NavSection title="Explorer" items={exploreNav} />
+
+        {myClubs.length > 0 && (
+          <div className="mb-2">
+            <p className="px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-muted">
+              Mon club
+            </p>
+            {myClubs.length > 1 && (
+              <div className="mx-2 mb-1 px-3">
+                <select
+                  value={activeSlug ?? ''}
+                  onChange={(e) => setActiveClub(e.target.value)}
+                  className="w-full rounded-md border border-border/50 bg-surface px-2 py-1 text-[12px] text-muted focus:outline-none"
+                >
+                  {myClubs.map((c) => (
+                    <option key={c.id} value={c.slug}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+            <NavSection title="" items={clubNav} />
+            {isClubAdmin && (
+              <NavSection
+                title=""
+                items={[{ href: `/clubs/${activeSlug}/manage`, icon: '⚙️', label: 'Gérer mon club' }]}
+              />
+            )}
+          </div>
+        )}
+
         {isCoach && <NavSection title="Espace coach" items={coachNav} titleColor="text-violet-500" />}
       </div>
 
