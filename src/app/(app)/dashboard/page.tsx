@@ -275,7 +275,7 @@ export default function DashboardPage() {
             standGoal={Math.max(st.total_activities, 20)}
             size={140}
           />
-          <div className="grid grid-cols-3 sm:grid-cols-1 gap-3 flex-1 w-full">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1 w-full">
             <StatCard variant="gradient" label="Seances" value={s.sessionsThisMonth} />
             <StatCard variant="white" label="Temps total" value={`${hours}h${mins > 0 ? mins : ''}`} />
             <StatCard variant="ring" label="Objectifs" percent={s.activeGoals > 0 ? 65 : 0} subtitle={s.activeGoals > 0 ? `${s.activeGoals} en cours` : 'Aucun'} />

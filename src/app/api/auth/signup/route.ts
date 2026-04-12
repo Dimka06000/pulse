@@ -35,7 +35,7 @@ export async function POST(request: Request) {
   await admin.from('profiles').update({
     first_name: name.split(' ')[0] || name,
     last_name: name.split(' ').slice(1).join(' ') || '',
-    role: role === 'coach' ? 'coach' : 'athlete',
+    role: ['coach', 'both', 'admin'].includes(role) ? role : 'athlete',
   }).eq('id', user.id);
 
   return NextResponse.json({ success: true, userId: user.id });

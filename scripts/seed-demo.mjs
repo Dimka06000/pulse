@@ -75,9 +75,9 @@ const allUsers = [
   { email: 'chloe.duval@demo.athlete', password: 'Demo1234!', first_name: 'Chloé', last_name: 'Duval', role: 'athlete' },
   { email: 'hugo.leroy@demo.athlete', password: 'Demo1234!', first_name: 'Hugo', last_name: 'Leroy', role: 'athlete' },
   // Admin
-  { email: 'admin@oikos.one', password: 'Admin1234!', first_name: 'Admin', last_name: 'OIKOS', role: 'athlete' },
-  // Dimitri — the demo user
-  { email: 'dimitri@coaching-app.fr', password: 'Oikos2026!', first_name: 'Dimitri', last_name: 'K.', role: 'athlete' },
+  { email: 'admin@oikos.one', password: 'Admin1234!', first_name: 'Admin', last_name: 'OIKOS', role: 'admin' },
+  // Dimitri — the demo user (coach + athlete)
+  { email: 'dimitri@coaching-app.fr', password: 'Oikos2026!', first_name: 'Dimitri', last_name: 'K.', role: 'both' },
 ];
 
 const userIds = {};

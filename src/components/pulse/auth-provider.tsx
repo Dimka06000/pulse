@@ -10,10 +10,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const supabase = getSupabaseBrowserClient();
 
-    // Initial session check
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    // Initial session check — always read role from profiles table
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (user) {
-        const role = (user.user_metadata?.role as string) || 'athlete';
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        const role = profile?.role || (user.user_metadata?.role as string) || 'athlete';
         setUser(user.id, role as any);
       } else {
         clear();

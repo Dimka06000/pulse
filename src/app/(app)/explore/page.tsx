@@ -41,7 +41,7 @@ export default function ExplorePage() {
     setLoading(true);
     fetch('/api/clubs?limit=20')
       .then(r => r.ok ? r.json() : { data: [] })
-      .then(d => setClubs(d.data || []))
+      .then(d => setClubs(d.clubs || d.data || []))
       .catch(() => setClubs([]))
       .finally(() => setLoading(false));
   }, []);

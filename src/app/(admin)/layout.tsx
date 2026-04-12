@@ -1,11 +1,16 @@
+import { redirect } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 import { NavAdmin } from '@/components/layout/nav-admin';
+import { requireAdmin } from '@/lib/admin/guard';
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const auth = await requireAdmin();
+  if (auth.error) redirect('/dashboard');
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
