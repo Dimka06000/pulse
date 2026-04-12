@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { AppHeader } from '@/components/pulse/app-header';
 import { EmptyState } from '@/components/pulse/empty-state';
 import { useRouter } from 'next/navigation';
@@ -14,8 +15,30 @@ const quickLinks = [
   { href: '/coach/events', icon: '🎪', label: 'Événements', description: 'Gérer vos événements' },
 ];
 
+interface CoachStats {
+  clients: number;
+  sessions: number;
+  revenue: number;
+  avgRating: string | null;
+}
+
 export default function CoachDashboardPage() {
   const router = useRouter();
+  const [stats, setStats] = useState<CoachStats | null>(null);
+
+  useEffect(() => {
+    fetch('/api/coaches/me/stats')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => { if (data) setStats(data); })
+      .catch(() => {});
+  }, []);
+
+  const statCards = [
+    { icon: '👥', label: 'Clients', value: stats ? String(stats.clients) : '—' },
+    { icon: '📋', label: 'Séances', value: stats ? String(stats.sessions) : '—' },
+    { icon: '💰', label: 'Revenus', value: stats ? `${(stats.revenue / 100).toFixed(0)}€` : '—' },
+    { icon: '⭐', label: 'Note', value: stats?.avgRating ? `${stats.avgRating}/5` : '—' },
+  ];
 
   return (
     <>
@@ -28,14 +51,9 @@ export default function CoachDashboardPage() {
           </p>
         </div>
 
-        {/* Quick stats - placeholder cards */}
+        {/* Quick stats */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            { icon: '👥', label: 'Clients', value: '—' },
-            { icon: '📋', label: 'Séances', value: '—' },
-            { icon: '💰', label: 'Revenus', value: '—' },
-            { icon: '⭐', label: 'Note', value: '—' },
-          ].map((stat) => (
+          {statCards.map((stat) => (
             <div
               key={stat.label}
               className="rounded-xl border border-border/50 bg-white p-4 shadow-sm"

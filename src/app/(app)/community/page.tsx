@@ -17,14 +17,20 @@ export default function CommunityPage() {
   const [posts, setPosts] = useState<any[]>([]);
   const [challenges, setChallenges] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [feedPage, setFeedPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
   const [joiningId, setJoiningId] = useState<string | null>(null);
 
-  const fetchFeed = useCallback(async () => {
+  const fetchFeed = useCallback(async (page = 1, append = false) => {
     if (!userId) return;
-    const res = await fetch('/api/feed?page=1&limit=20');
+    const res = await fetch(`/api/feed?page=${page}&limit=20`);
     if (res.ok) {
       const data = await res.json();
-      setPosts(data.posts || []);
+      const newPosts = data.posts || [];
+      setPosts(prev => append ? [...prev, ...newPosts] : newPosts);
+      setHasMore(!!data.hasMore);
+      setFeedPage(page);
     }
   }, [userId]);
 
@@ -121,9 +127,24 @@ export default function CommunityPage() {
                 onAction={() => { window.location.href = '/planning'; }}
               />
             ) : (
-              posts.map(post => (
-                <FeedCard key={post.id} post={post} onKudos={handleKudos} />
-              ))
+              <>
+                {posts.map(post => (
+                  <FeedCard key={post.id} post={post} onKudos={handleKudos} />
+                ))}
+                {hasMore && (
+                  <button
+                    onClick={async () => {
+                      setLoadingMore(true);
+                      await fetchFeed(feedPage + 1, true);
+                      setLoadingMore(false);
+                    }}
+                    disabled={loadingMore}
+                    className="w-full rounded-xl border border-border bg-white py-3 text-sm font-semibold text-muted hover:text-text hover:border-brand-500 transition-colors disabled:opacity-50"
+                  >
+                    {loadingMore ? 'Chargement...' : 'Voir plus'}
+                  </button>
+                )}
+              </>
             )}
           </div>
         )}
