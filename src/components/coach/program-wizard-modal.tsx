@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,6 +12,7 @@ import {
   type Sport,
 } from '@/lib/sports';
 import { formatPrice } from '@oikos/coaching';
+import type { AthleteCalibration } from '@/lib/training/calibration';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export type ProgramData = {
@@ -41,6 +42,7 @@ type FormData = {
   level: string;
   duration_weeks: number;
   price: number;
+  athleteId: string;
 } & EventFormData;
 
 interface ProgramWizardModalProps {
@@ -48,6 +50,7 @@ interface ProgramWizardModalProps {
   onClose: () => void;
   onSaved: (program: ProgramData) => void;
   editProgram?: ProgramData | null;
+  athleteId?: string | null;
 }
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -75,11 +78,18 @@ const DEFAULT_FORM: FormData = {
   level: 'all',
   duration_weeks: 8,
   price: 0,
+  athleteId: '',
   hasTargetEvent: false,
   eventName: '',
   eventDate: '',
   eventDistanceKm: null,
   eventTerrainType: null,
+};
+
+const LEVEL_MAP: Record<string, string> = {
+  beginner: 'Débutant',
+  intermediate: 'Intermédiaire',
+  advanced: 'Avancé',
 };
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -88,14 +98,44 @@ export function ProgramWizardModal({
   onClose,
   onSaved,
   editProgram,
+  athleteId: externalAthleteId,
 }: ProgramWizardModalProps) {
   const [step, setStep] = useState(0);
   const [form, setForm] = useState<FormData>(DEFAULT_FORM);
   const [customWeeks, setCustomWeeks] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [calibration, setCalibration] = useState<AthleteCalibration | null>(null);
+  const [calibrating, setCalibrating] = useState(false);
+  const [calibrationError, setCalibrationError] = useState<string | null>(null);
 
   const isEdit = !!editProgram;
+  const effectiveAthleteId = form.athleteId || externalAthleteId || '';
+
+  const handleCalibrate = useCallback(async () => {
+    if (!effectiveAthleteId) return;
+    setCalibrating(true);
+    setCalibrationError(null);
+    try {
+      const res = await fetch(`/api/athletes/${effectiveAthleteId}/calibrate`);
+      if (!res.ok) {
+        const data = await res.json();
+        setCalibrationError(data.error || 'Erreur de calibration');
+        return;
+      }
+      const data: AthleteCalibration = await res.json();
+      setCalibration(data);
+      // Auto-fill level and volume if we have data
+      if (data.dataPoints > 0) {
+        const levelValue = data.suggestedLevel;
+        setForm((prev) => ({ ...prev, level: levelValue }));
+      }
+    } catch {
+      setCalibrationError('Erreur réseau');
+    } finally {
+      setCalibrating(false);
+    }
+  }, [effectiveAthleteId]);
 
   useEffect(() => {
     if (editProgram) {
@@ -106,6 +146,7 @@ export function ProgramWizardModal({
         level: editProgram.level,
         duration_weeks: editProgram.duration_weeks,
         price: editProgram.price,
+        athleteId: externalAthleteId || '',
         hasTargetEvent: false,
         eventName: '',
         eventDate: '',
@@ -115,12 +156,14 @@ export function ProgramWizardModal({
       setCustomWeeks(!WEEK_PRESETS.includes(editProgram.duration_weeks));
       setStep(0);
     } else {
-      setForm(DEFAULT_FORM);
+      setForm({ ...DEFAULT_FORM, athleteId: externalAthleteId || '' });
       setCustomWeeks(false);
       setStep(0);
     }
     setError(null);
-  }, [editProgram, open]);
+    setCalibration(null);
+    setCalibrationError(null);
+  }, [editProgram, open, externalAthleteId]);
 
   if (!open) return null;
 
@@ -401,6 +444,84 @@ export function ProgramWizardModal({
           {/* Step 2: Durée & Tarif */}
           {step === 2 && (
             <div className="space-y-5">
+              {/* Calibration from activity history */}
+              {effectiveAthleteId && (
+                <div className="space-y-3">
+                  {!calibration && (
+                    <Button
+                      variant="secondary"
+                      onClick={handleCalibrate}
+                      disabled={calibrating}
+                      className="w-full"
+                    >
+                      {calibrating ? 'Analyse en cours...' : 'Calibrer depuis l\'historique'}
+                    </Button>
+                  )}
+                  {calibrationError && (
+                    <p className="text-sm text-red-500">{calibrationError}</p>
+                  )}
+                  {calibration && calibration.dataPoints > 0 && (
+                    <div className="rounded-xl border border-brand-200 bg-brand-50/50 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-semibold text-brand-700">
+                          Calibration auto
+                        </h4>
+                        <span className="text-[11px] text-gray-400">
+                          {calibration.dataPoints} activités analysées
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="rounded-lg bg-white p-2 text-center shadow-sm">
+                          <span className="text-lg font-bold text-blue-600">
+                            {calibration.currentCtl}
+                          </span>
+                          <span className="text-[10px] block text-gray-500">Fitness (CTL)</span>
+                        </div>
+                        <div className="rounded-lg bg-white p-2 text-center shadow-sm">
+                          <span className="text-lg font-bold text-amber-600">
+                            {Math.round(calibration.weeklyVolumeMin / 60 * 10) / 10}h
+                          </span>
+                          <span className="text-[10px] block text-gray-500">Vol. / semaine</span>
+                        </div>
+                        <div className="rounded-lg bg-white p-2 text-center shadow-sm">
+                          <span className="text-lg font-bold text-green-600">
+                            {calibration.weeklySessionCount}
+                          </span>
+                          <span className="text-[10px] block text-gray-500">Séances / sem.</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-xs bg-brand-100 text-brand-700 px-2 py-0.5 rounded-full font-medium">
+                          {LEVEL_MAP[calibration.suggestedLevel] || calibration.suggestedLevel}
+                        </span>
+                        {calibration.primarySports.map((s) => (
+                          <span
+                            key={s}
+                            className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full"
+                          >
+                            {SPORT_LABELS[s as Sport] || s}
+                          </span>
+                        ))}
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                            calibration.currentTsb >= 0
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-red-100 text-red-700'
+                          }`}
+                        >
+                          TSB {calibration.currentTsb > 0 ? '+' : ''}{calibration.currentTsb}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {calibration && calibration.dataPoints === 0 && (
+                    <p className="text-sm text-gray-400">
+                      Aucune activité trouvée sur les 12 dernières semaines.
+                    </p>
+                  )}
+                </div>
+              )}
+
               {/* Duration in weeks */}
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">
