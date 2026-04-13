@@ -99,6 +99,7 @@ export function CoachProfileForm() {
   const [allSpecialties, setAllSpecialties] = useState<string[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [profileMeta, setProfileMeta] = useState({ avgRating: 0, totalSessions: 0 });
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     Promise.all([
@@ -145,6 +146,9 @@ export function CoachProfileForm() {
   }
 
   function handleNext() {
+    if (step === 0) setTouched((t) => ({ ...t, displayName: true }));
+    if (step === 1) setTouched((t) => ({ ...t, mainSports: true }));
+    if (!canGoNext()) return;
     if (step < TOTAL_STEPS - 1) setStep(step + 1);
   }
 
@@ -300,7 +304,7 @@ export function CoachProfileForm() {
               value={form.displayName}
               onChange={(e) => updateForm({ displayName: e.target.value })}
             />
-            {!form.displayName.trim() && (
+            {touched.displayName && !form.displayName.trim() && (
               <p className="mt-1 text-xs text-red-500">Nom d&apos;affichage requis</p>
             )}
           </div>
@@ -362,7 +366,7 @@ export function CoachProfileForm() {
                 );
               })}
             </div>
-            {form.mainSports.length === 0 && (
+            {touched.mainSports && form.mainSports.length === 0 && (
               <p className="mt-1 text-xs text-red-500">Choisissez au moins un sport</p>
             )}
           </div>
