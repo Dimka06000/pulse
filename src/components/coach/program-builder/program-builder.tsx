@@ -12,7 +12,9 @@ import { SessionLibrary } from './session-library';
 import { WeekGrid } from './week-grid';
 import { CycleOverlay } from './cycle-overlay';
 import { RulesPanel } from './rules-panel';
+import { FeedbackPanel } from './feedback-panel';
 import { RuleEditorModal, type ProgramRule } from './rule-editor-modal';
+import { LoadChart } from './load-chart';
 import { SPORT_EMOJIS, type Sport } from '@/lib/sports';
 import type { DraggableItem } from './draggable-session-card';
 
@@ -81,7 +83,7 @@ export function ProgramBuilder({
   );
 
   // Pro mode data
-  const [loadData, setLoadData] = useState<{ history: { date: string; tsb: number }[] } | null>(null);
+  const [loadData, setLoadData] = useState<{ history: { date: string; ctl: number; atl: number; tsb: number }[] } | null>(null);
   const [cycleData, setCycleData] = useState<{ lastPeriodDate: string; avgCycleDays: number; avgPeriodDays: number } | null>(null);
 
   // Rules state
@@ -333,6 +335,13 @@ export function ProgramBuilder({
                 programStartDate={programStartDate}
               />
             )}
+            {proMode && loadData?.history?.length && (
+              <LoadChart
+                history={loadData.history}
+                blocks={blocks?.map((b) => ({ phase: b.phase, weekStart: b.week_start, weekEnd: b.week_end }))}
+                totalWeeks={program.duration_weeks}
+              />
+            )}
             <WeekGrid
               weekNumber={activeWeek}
               workouts={weekWorkouts}
@@ -348,6 +357,13 @@ export function ProgramBuilder({
                 onDeleteRule={handleDeleteRule}
                 onToggleRule={handleToggleRule}
                 onAddTemplate={handleAddTemplate}
+              />
+            )}
+            {proMode && (
+              <FeedbackPanel
+                programId={programId}
+                activeWeek={activeWeek}
+                athleteId={athleteId}
               />
             )}
           </div>
