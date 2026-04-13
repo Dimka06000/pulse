@@ -19,31 +19,53 @@ function SessionsSkeleton() {
 export default function CoachSessionsPage() {
   const [sessions, setSessions] = useState<SessionTemplate[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/coaches/me/sessions')
       .then((r) => {
+        if (r.status === 401) throw new Error('auth');
+        if (r.status === 403) throw new Error('not-coach');
         if (!r.ok) throw new Error('fetch failed');
         return r.json();
       })
       .then((data) => setSessions(Array.isArray(data) ? data : []))
-      .catch(() => setError(true))
+      .catch((err: Error) => setError(err.message || 'fetch failed'))
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <SessionsSkeleton />;
 
   if (error) {
+    const isAuth = error === 'auth';
+    const isNotCoach = error === 'not-coach';
     return (
       <div className="mx-auto max-w-3xl px-4 py-8">
         <h1 className="text-2xl font-bold text-text mb-6">Mes séances</h1>
         <EmptyState
-          icon="⚠️"
-          title="Impossible de charger les séances"
-          description="Vérifiez votre connexion et réessayez."
-          actionLabel="Réessayer"
-          onAction={() => window.location.reload()}
+          icon={isAuth ? '🔒' : isNotCoach ? '🚫' : '⚠️'}
+          title={
+            isAuth
+              ? 'Connectez-vous pour accéder à vos séances'
+              : isNotCoach
+                ? 'Cette page est réservée aux coachs'
+                : 'Impossible de charger les séances. Réessayez.'
+          }
+          description={
+            isAuth
+              ? 'Vous devez être connecté pour gérer vos séances.'
+              : isNotCoach
+                ? 'Seuls les comptes coach peuvent accéder à cette page.'
+                : 'Vérifiez votre connexion et réessayez.'
+          }
+          actionLabel={isAuth ? 'Se connecter' : isNotCoach ? undefined : 'Réessayer'}
+          onAction={
+            isAuth
+              ? () => (window.location.href = '/login')
+              : isNotCoach
+                ? undefined
+                : () => window.location.reload()
+          }
         />
       </div>
     );

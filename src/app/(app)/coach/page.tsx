@@ -7,12 +7,13 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const quickLinks = [
+  { href: '/coach', icon: '📊', label: 'Tableau de bord', description: 'Vue d\'ensemble' },
+  { href: '/coach/agenda', icon: '📅', label: 'Agenda', description: 'Vos rendez-vous' },
   { href: '/coach/clients', icon: '👥', label: 'Mes clients', description: 'Gérer vos sportifs' },
   { href: '/coach/sessions', icon: '📋', label: 'Mes séances', description: 'Configurer vos offres' },
-  { href: '/coach/availability', icon: '🕐', label: 'Disponibilités', description: 'Définir vos créneaux' },
+  { href: '/coach/programs', icon: '📝', label: 'Programmes', description: 'Vos programmes' },
   { href: '/coach/revenue', icon: '💰', label: 'Revenus', description: 'Suivre vos paiements' },
-  { href: '/coach/reviews', icon: '⭐', label: 'Avis', description: 'Voir les retours clients' },
-  { href: '/coach/events', icon: '🎪', label: 'Événements', description: 'Gérer vos événements' },
+  { href: '/coach/profile', icon: '✏️', label: 'Mon profil', description: 'Modifier votre profil' },
 ];
 
 interface CoachStats {
@@ -91,14 +92,16 @@ export default function CoachDashboardPage() {
           </div>
         </div>
 
-        {/* Getting started hint */}
-        <EmptyState
-          icon="🚀"
-          title="Commencez par configurer vos séances"
-          description="Créez vos offres de coaching, définissez vos disponibilités, et les sportifs pourront vous réserver directement."
-          actionLabel="Créer une séance"
-          onAction={() => router.push('/coach/sessions')}
-        />
+        {/* Getting started hint — only when no sessions yet */}
+        {stats && stats.sessions === 0 && (
+          <EmptyState
+            icon="🚀"
+            title="Commencez par configurer vos séances"
+            description="Créez vos offres de coaching, définissez vos disponibilités, et les sportifs pourront vous réserver directement."
+            actionLabel="Créer une séance"
+            onAction={() => router.push('/coach/sessions')}
+          />
+        )}
       </div>
     </>
   );

@@ -11,13 +11,11 @@ type NavItem = { href: string; icon: string; label: string };
 const coachSidebarNav: NavItem[] = [
   { href: '/coach', icon: '📊', label: 'Tableau de bord' },
   { href: '/coach/agenda', icon: '📅', label: 'Agenda' },
-  { href: '/coach/clients', icon: '👥', label: 'Mes clients' },
-  { href: '/coach/sessions', icon: '📋', label: 'Mes séances' },
+  { href: '/coach/clients', icon: '👥', label: 'Clients' },
+  { href: '/coach/sessions', icon: '📋', label: 'Séances' },
+  { href: '/coach/programs', icon: '📝', label: 'Programmes' },
   { href: '/coach/revenue', icon: '💰', label: 'Revenus' },
-  { href: '/coach/reviews', icon: '⭐', label: 'Avis' },
-  { href: '/coach/availability', icon: '🕐', label: 'Disponibilités' },
-  { href: '/coach/events', icon: '🎪', label: 'Événements' },
-  { href: '/messages', icon: '💬', label: 'Messages' },
+  { href: '/coach/profile', icon: '✏️', label: 'Profil' },
 ];
 
 function CoachSubNav() {

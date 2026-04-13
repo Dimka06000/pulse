@@ -39,6 +39,7 @@ export function SessionsManager({ initialSessions }: SessionsManagerProps) {
   const [editSession, setEditSession] = useState<SessionTemplate | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   function handleCreate() {
     setEditSession(null);
@@ -62,19 +63,22 @@ export function SessionsManager({ initialSessions }: SessionsManagerProps) {
 
   async function handleDelete(id: string) {
     setDeleting(true);
+    setDeleteError(null);
     try {
       const res = await fetch(`/api/coaches/me/sessions?id=${id}`, {
         method: 'DELETE',
       });
       if (res.ok) {
         setSessions((prev) => prev.filter((s) => s.id !== id));
+        setDeleteId(null);
         router.refresh();
+      } else {
+        setDeleteError('Impossible de supprimer la séance. Réessayez.');
       }
     } catch {
-      // silent
+      setDeleteError('Erreur réseau. Vérifiez votre connexion.');
     } finally {
       setDeleting(false);
-      setDeleteId(null);
     }
   }
 
@@ -177,24 +181,29 @@ export function SessionsManager({ initialSessions }: SessionsManagerProps) {
 
               {/* Delete confirmation */}
               {deleteId === session.id && (
-                <div className="border-t border-gray-100 bg-red-50 px-4 py-3 flex items-center justify-between">
-                  <p className="text-sm text-red-700">Supprimer cette séance ?</p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleteId(null)}
-                    >
-                      Annuler
-                    </Button>
-                    <button
-                      onClick={() => handleDelete(session.id)}
-                      disabled={deleting}
-                      className="text-xs font-medium text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-lg transition disabled:opacity-50"
-                    >
-                      {deleting ? 'Suppression...' : 'Confirmer'}
-                    </button>
+                <div className="border-t border-gray-100 bg-red-50 px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-red-700">Supprimer cette séance ?</p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => { setDeleteId(null); setDeleteError(null); }}
+                      >
+                        Annuler
+                      </Button>
+                      <button
+                        onClick={() => handleDelete(session.id)}
+                        disabled={deleting}
+                        className="text-xs font-medium text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-lg transition disabled:opacity-50"
+                      >
+                        {deleting ? 'Suppression...' : 'Confirmer'}
+                      </button>
+                    </div>
                   </div>
+                  {deleteError && (
+                    <p className="text-xs text-red-600 mt-2">{deleteError}</p>
+                  )}
                 </div>
               )}
             </div>

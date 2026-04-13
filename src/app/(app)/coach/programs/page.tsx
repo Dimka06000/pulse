@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
 import { AppHeader } from '@/components/pulse/app-header';
 import { Button, EmptyState, SportGradient } from '@/components/pulse';
 import { useToast } from '@/components/pulse/toast';
@@ -10,22 +11,29 @@ import { ProgramWizardModal, type ProgramData } from '@/components/coach/program
 export default function CoachProgramsPage() {
   const [programs, setPrograms] = useState<ProgramData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editProgram, setEditProgram] = useState<ProgramData | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchPrograms = useCallback(async () => {
     try {
+      setError(null);
       const meRes = await fetch('/api/coaches/me');
-      if (!meRes.ok) return;
+      if (meRes.status === 401) { setError('auth'); return; }
+      if (meRes.status === 403) { setError('not-coach'); return; }
+      if (!meRes.ok) { setError('fetch'); return; }
       const coach = await meRes.json();
 
       const progsRes = await fetch(`/api/programs?coach_id=${coach.id}`);
       if (progsRes.ok) {
         setPrograms(await progsRes.json());
+      } else {
+        setError('fetch');
       }
     } catch {
-      // ignore
+      setError('fetch');
     } finally {
       setLoading(false);
     }
@@ -48,11 +56,15 @@ export default function CoachProgramsPage() {
     setWizardOpen(true);
   };
 
-  const handleDelete = async (e: React.MouseEvent, program: ProgramData) => {
+  const handleDeleteClick = (e: React.MouseEvent, program: ProgramData) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm('Supprimer ce programme ? Cette action est irréversible.')) return;
+    setDeletingId(program.id!);
+  };
 
+  const handleDeleteConfirm = async (e: React.MouseEvent, program: ProgramData) => {
+    e.preventDefault();
+    e.stopPropagation();
     const res = await fetch(`/api/programs/${program.id}`, { method: 'DELETE' });
     if (res.ok) {
       toast('success', 'Supprimé', 'Programme supprimé');
@@ -60,6 +72,13 @@ export default function CoachProgramsPage() {
     } else {
       toast('error', 'Erreur', 'Impossible de supprimer le programme');
     }
+    setDeletingId(null);
+  };
+
+  const handleDeleteCancel = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDeletingId(null);
   };
 
   return (
@@ -67,14 +86,41 @@ export default function CoachProgramsPage() {
       <AppHeader title="Programmes" />
       <div className="p-4 md:p-8">
         <div className="mb-6 flex items-center justify-between">
-          <p className="text-sm text-muted">{programs.length} programme{programs.length !== 1 ? 's' : ''}</p>
+          {!loading && <p className="text-sm text-muted">{programs.length} programme{programs.length !== 1 ? 's' : ''}</p>}
+          {loading && <div />}
           <Button onClick={() => { setEditProgram(null); setWizardOpen(true); }}>
             + Créer un programme
           </Button>
         </div>
 
         {/* Programs list */}
-        {loading ? (
+        {error ? (
+          <EmptyState
+            icon={error === 'auth' ? '🔒' : error === 'not-coach' ? '🚫' : '⚠️'}
+            title={
+              error === 'auth'
+                ? 'Connectez-vous pour accéder à vos programmes'
+                : error === 'not-coach'
+                  ? 'Cette page est réservée aux coachs'
+                  : 'Impossible de charger les programmes. Réessayez.'
+            }
+            description={
+              error === 'auth'
+                ? 'Vous devez être connecté pour gérer vos programmes.'
+                : error === 'not-coach'
+                  ? 'Seuls les comptes coach peuvent accéder à cette page.'
+                  : 'Vérifiez votre connexion et réessayez.'
+            }
+            actionLabel={error === 'auth' ? 'Se connecter' : error === 'not-coach' ? undefined : 'Réessayer'}
+            onAction={
+              error === 'auth'
+                ? () => (window.location.href = '/login')
+                : error === 'not-coach'
+                  ? undefined
+                  : () => { setError(null); setLoading(true); fetchPrograms(); }
+            }
+          />
+        ) : loading ? (
           <div className="flex justify-center py-20">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-brand-500 border-t-transparent" />
           </div>
@@ -89,7 +135,7 @@ export default function CoachProgramsPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {programs.map((p) => (
-              <a
+              <Link
                 key={p.id}
                 href={`/coach/programs/${p.id}`}
                 className="group relative overflow-hidden rounded-2xl border border-border bg-white transition-shadow hover:shadow-lg"
@@ -114,22 +160,40 @@ export default function CoachProgramsPage() {
                     <p className="mt-1 line-clamp-2 text-xs text-muted">{p.description}</p>
                   )}
                   {/* Edit / Delete buttons */}
-                  <div className="mt-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => handleEdit(e, p)}
-                      className="flex-1 rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-200 transition"
-                    >
-                      Modifier
-                    </button>
-                    <button
-                      onClick={(e) => handleDelete(e, p)}
-                      className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-100 transition"
-                    >
-                      Supprimer
-                    </button>
-                  </div>
+                  {deletingId === p.id ? (
+                    <div className="mt-3 flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2">
+                      <span className="flex-1 text-xs font-medium text-red-700">Supprimer ce programme ?</span>
+                      <button
+                        onClick={(e) => handleDeleteCancel(e)}
+                        className="rounded-md bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 transition"
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteConfirm(e, p)}
+                        className="rounded-md bg-red-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-red-700 transition"
+                      >
+                        Confirmer
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="mt-3 flex gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => handleEdit(e, p)}
+                        className="text-xs font-medium text-gray-500 hover:text-brand-600 px-2 py-1 rounded-lg hover:bg-brand-50 transition"
+                      >
+                        Modifier
+                      </button>
+                      <button
+                        onClick={(e) => handleDeleteClick(e, p)}
+                        className="text-xs font-medium text-gray-500 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 transition"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         )}

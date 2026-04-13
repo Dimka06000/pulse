@@ -59,6 +59,10 @@ export default function ProgramDetailPage() {
   const [selectedClientId, setSelectedClientId] = useState('');
   const [loadingClients, setLoadingClients] = useState(false);
 
+  // Inline delete confirmation
+  const [confirmDeleteProgram, setConfirmDeleteProgram] = useState(false);
+  const [confirmDeleteWorkoutId, setConfirmDeleteWorkoutId] = useState<string | null>(null);
+
   // Duplicate week
   const [duplicating, setDuplicating] = useState(false);
 
@@ -108,16 +112,15 @@ export default function ProgramDetailPage() {
   };
 
   const handleDelete = async () => {
-    if (!confirm('Supprimer ce programme ? Cette action est irréversible.')) return;
     const res = await fetch(`/api/programs/${id}`, { method: 'DELETE' });
     if (res.ok) {
       toast('success', 'Supprimé', 'Programme supprimé');
       router.push('/coach/programs');
     }
+    setConfirmDeleteProgram(false);
   };
 
   const handleDeleteWorkout = async (workoutId: string) => {
-    if (!confirm('Supprimer cette séance ?')) return;
     const res = await fetch(`/api/programs/${id}/workouts?workout_id=${workoutId}`, {
       method: 'DELETE',
     });
@@ -127,6 +130,7 @@ export default function ProgramDetailPage() {
     } else {
       toast('error', 'Erreur', 'Impossible de supprimer la séance');
     }
+    setConfirmDeleteWorkoutId(null);
   };
 
   const openEditorForDay = (day: number) => {
@@ -182,20 +186,22 @@ export default function ProgramDetailPage() {
 
     setDuplicating(true);
     try {
-      for (const w of weekWorkouts) {
-        await fetch(`/api/programs/${id}/workouts`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            week_number: targetWeek,
-            day_number: w.day_number,
-            title: w.title,
-            description: w.description,
-            workout_data: w.workout_data,
-            duration_minutes: w.duration_minutes,
-          }),
-        });
-      }
+      await Promise.all(
+        weekWorkouts.map((w) =>
+          fetch(`/api/programs/${id}/workouts`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              week_number: targetWeek,
+              day_number: w.day_number,
+              title: w.title,
+              description: w.description,
+              workout_data: w.workout_data,
+              duration_minutes: w.duration_minutes,
+            }),
+          })
+        )
+      );
       toast('success', 'Dupliqué', `Semaine ${activeWeek} copiée vers S${targetWeek}`);
       setActiveWeek(targetWeek);
       fetchProgram();
@@ -262,9 +268,27 @@ export default function ProgramDetailPage() {
             <Button size="sm" variant="dark" onClick={() => setShowAssign(!showAssign)}>
               Assigner
             </Button>
-            <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={handleDelete}>
-              Supprimer
-            </Button>
+            {!confirmDeleteProgram ? (
+              <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => setConfirmDeleteProgram(true)}>
+                Supprimer
+              </Button>
+            ) : (
+              <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-1.5">
+                <span className="text-xs font-medium text-red-700">Supprimer ce programme ?</span>
+                <button
+                  onClick={() => setConfirmDeleteProgram(false)}
+                  className="rounded-md bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 transition"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={handleDelete}
+                  className="rounded-md bg-red-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-red-700 transition"
+                >
+                  Confirmer
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -348,7 +372,15 @@ export default function ProgramDetailPage() {
                   </button>
                 </div>
                 {dayWorkouts.length === 0 ? (
-                  <p className="text-xs text-muted/60">Repos</p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted/60">Aucune séance</p>
+                    <button
+                      onClick={() => openEditorForDay(day)}
+                      className="text-xs text-brand-500 hover:underline"
+                    >
+                      + Ajouter
+                    </button>
+                  </div>
                 ) : (
                   dayWorkouts.map((w) => (
                     <div
@@ -356,6 +388,23 @@ export default function ProgramDetailPage() {
                       className="mb-2 rounded-lg bg-surface p-3 cursor-pointer hover:ring-1 hover:ring-brand-300 transition group/workout"
                       onClick={() => openEditorForWorkout(w)}
                     >
+                      {confirmDeleteWorkoutId === w.id ? (
+                        <div className="flex items-center gap-2 rounded-lg bg-red-50 px-2 py-1.5" onClick={(e) => e.stopPropagation()}>
+                          <span className="flex-1 text-xs font-medium text-red-700">Supprimer ?</span>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setConfirmDeleteWorkoutId(null); }}
+                            className="rounded-md bg-white px-2 py-0.5 text-xs font-medium text-gray-600 hover:bg-gray-100 transition"
+                          >
+                            Annuler
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDeleteWorkout(w.id); }}
+                            className="rounded-md bg-red-600 px-2 py-0.5 text-xs font-medium text-white hover:bg-red-700 transition"
+                          >
+                            Confirmer
+                          </button>
+                        </div>
+                      ) : (
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium text-text">{w.title}</p>
@@ -364,14 +413,15 @@ export default function ProgramDetailPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteWorkout(w.id);
+                            setConfirmDeleteWorkoutId(w.id);
                           }}
-                          className="shrink-0 ml-2 h-6 w-6 flex items-center justify-center rounded text-gray-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover/workout:opacity-100 transition text-xs"
+                          className="shrink-0 ml-2 h-6 w-6 flex items-center justify-center rounded text-gray-300 hover:text-red-500 hover:bg-red-50 md:opacity-0 md:group-hover/workout:opacity-100 transition text-xs"
                           title="Supprimer"
                         >
                           ✕
                         </button>
                       </div>
+                      )}
                       {w.description && <p className="mt-1 text-xs text-muted">{w.description}</p>}
                       {/* Exercise summary */}
                       {w.workout_data?.exercises && w.workout_data.exercises.length > 0 && (

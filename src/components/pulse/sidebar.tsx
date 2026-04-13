@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/auth';
 import { useClubsStore } from '@/stores/clubs';
 
@@ -32,16 +32,20 @@ const coachNav: NavItem[] = [
   { href: '/coach/agenda', icon: '📅', label: 'Agenda' },
   { href: '/coach/clients', icon: '👥', label: 'Mes clients' },
   { href: '/coach/sessions', icon: '📋', label: 'Mes séances' },
-  { href: '/coach/pricing', icon: '🏷️', label: 'Tarifs' },
+  { href: '/coach/programs', icon: '📝', label: 'Programmes' },
   { href: '/coach/revenue', icon: '💰', label: 'Revenus' },
-  { href: '/coach/reviews', icon: '⭐', label: 'Avis' },
+  { href: '/coach/profile', icon: '✏️', label: 'Mon profil' },
+];
+
+const coachNavMore: NavItem[] = [
+  { href: '/coach/pricing', icon: '🏷️', label: 'Tarifs' },
   { href: '/coach/availability', icon: '🕐', label: 'Disponibilités' },
+  { href: '/coach/reviews', icon: '⭐', label: 'Avis' },
   { href: '/coach/events', icon: '🎪', label: 'Événements' },
+  { href: '/coach/collabs', icon: '🤝', label: 'Collaborations' },
   { href: '/coach/training', icon: '🎓', label: 'Formations' },
   { href: '/coach/team', icon: '👥', label: 'Équipe' },
-  { href: '/coach/programs', icon: '📝', label: 'Programmes' },
   { href: '/coach/videos', icon: '🎬', label: 'Vidéos' },
-  { href: '/coach/profile', icon: '✏️', label: 'Mon profil' },
 ];
 
 function NavSection({ title, items, titleColor }: { title: string; items: NavItem[]; titleColor?: string }) {
@@ -68,6 +72,41 @@ function NavSection({ title, items, titleColor }: { title: string; items: NavIte
           </Link>
         );
       })}
+    </div>
+  );
+}
+
+function CoachMoreSection() {
+  const pathname = usePathname();
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="mb-2">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex w-full cursor-pointer items-center gap-1 px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-violet-500 hover:text-violet-700 transition-colors"
+      >
+        <span className="text-[10px]">{open ? '▾' : '▸'}</span>
+        Plus
+      </button>
+      {open &&
+        coachNavMore.map((item) => {
+          const active = pathname.startsWith(item.href);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`mx-2 mb-0.5 flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] transition-colors ${
+                active
+                  ? 'bg-gradient-to-r from-brand-500/8 to-cyan-500/8 font-semibold text-text'
+                  : 'text-muted hover:bg-surface hover:text-text'
+              }`}
+            >
+              <span className="text-base">{item.icon}</span>
+              {item.label}
+            </Link>
+          );
+        })}
     </div>
   );
 }
@@ -144,7 +183,12 @@ export function Sidebar() {
           </div>
         )}
 
-        {isCoach && <NavSection title="Espace coach" items={coachNav} titleColor="text-violet-500" />}
+        {isCoach && (
+          <>
+            <NavSection title="Espace coach" items={coachNav} titleColor="text-violet-500" />
+            <CoachMoreSection />
+          </>
+        )}
       </div>
 
       {/* User footer */}

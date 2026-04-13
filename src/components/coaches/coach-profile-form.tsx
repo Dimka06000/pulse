@@ -66,7 +66,8 @@ interface FormData {
   website: string;
 }
 
-const STEP_LABELS = ['Identite', 'Disciplines', 'Localisation', 'Liens & Apercu'];
+const STEP_LABELS = ['Identité', 'Spécialités', 'Localisation', 'Aperçu'];
+const STEP_SUBTITLES = ['Identité', 'Disciplines & Spécialités', 'Localisation & Tarifs', 'Liens & Aperçu'];
 const TOTAL_STEPS = 4;
 
 const DEFAULT_FORM: FormData = {
@@ -224,9 +225,7 @@ export function CoachProfileForm() {
       <div className="mb-6">
         <h1 className="text-xl font-extrabold text-text md:text-2xl">Mon profil coach</h1>
         <p className="mt-1 text-sm text-muted">
-          {step + 1} / {TOTAL_STEPS} &mdash; {
-            ['Identite', 'Disciplines & Specialites', 'Localisation & Tarifs', 'Liens & Apercu'][step]
-          }
+          {step + 1} / {TOTAL_STEPS} &mdash; {STEP_SUBTITLES[step]}
         </p>
       </div>
 
@@ -246,7 +245,7 @@ export function CoachProfileForm() {
               }`}
             />
             <span
-              className={`text-[11px] font-medium transition-colors hidden sm:inline ${
+              className={`text-[10px] sm:text-xs font-medium transition-colors ${
                 i === step
                   ? 'text-brand-600'
                   : i < step
@@ -254,7 +253,7 @@ export function CoachProfileForm() {
                     : 'text-gray-300'
               }`}
             >
-              {label}
+              <span className="sm:hidden">{i + 1}. </span>{label}
             </span>
           </button>
         ))}
@@ -268,11 +267,11 @@ export function CoachProfileForm() {
       )}
       {success && (
         <div className="mb-4 rounded-xl bg-green-50 border border-green-200 p-4 text-sm text-green-600">
-          Profil mis a jour avec succes !
+          Profil mis à jour avec succès !
         </div>
       )}
 
-      {/* ─── Step 0: Identite ─────────────────────────────────────────── */}
+      {/* ─── Step 0: Identité ─────────────────────────────────────────── */}
       {step === 0 && (
         <div className="space-y-6">
           {/* Avatar preview */}
@@ -290,27 +289,32 @@ export function CoachProfileForm() {
             )}
             <div>
               <p className="text-sm font-medium text-text">Photo de profil</p>
-              <p className="text-xs text-muted">Modifiable depuis les parametres du compte</p>
+              <p className="text-xs text-muted">Modifiable depuis les paramètres du compte</p>
             </div>
           </div>
 
-          <Input
-            label="Nom d'affichage"
-            placeholder="Ex: Coach Sarah, Jean Dupont Coaching..."
-            value={form.displayName}
-            onChange={(e) => updateForm({ displayName: e.target.value })}
-          />
+          <div>
+            <Input
+              label="Nom d'affichage"
+              placeholder="Ex: Coach Sarah, Jean Dupont Coaching..."
+              value={form.displayName}
+              onChange={(e) => updateForm({ displayName: e.target.value })}
+            />
+            {!form.displayName.trim() && (
+              <p className="mt-1 text-xs text-red-500">Nom d&apos;affichage requis</p>
+            )}
+          </div>
 
           <Textarea
             label="Bio"
-            placeholder="Presentez-vous en quelques lignes. Votre parcours, votre approche, ce qui vous motive..."
+            placeholder="Présentez-vous en quelques lignes. Votre parcours, votre approche, ce qui vous motive..."
             value={form.bio}
             onChange={(e) => updateForm({ bio: e.target.value })}
             rows={4}
           />
 
           <Input
-            label="Annees d'experience"
+            label="Années d'expérience"
             type="number"
             min={0}
             max={50}
@@ -321,7 +325,7 @@ export function CoachProfileForm() {
         </div>
       )}
 
-      {/* ─── Step 1: Disciplines & Specialites ─────────────────────── */}
+      {/* ─── Step 1: Disciplines & Spécialités ────────────────────── */}
       {step === 1 && (
         <div className="space-y-6">
           {/* Main sports grid */}
@@ -358,11 +362,14 @@ export function CoachProfileForm() {
                 );
               })}
             </div>
+            {form.mainSports.length === 0 && (
+              <p className="mt-1 text-xs text-red-500">Choisissez au moins un sport</p>
+            )}
           </div>
 
           {/* Specialties */}
           <div>
-            <label className="text-sm font-medium text-text mb-1.5 block">Specialites</label>
+            <label className="text-sm font-medium text-text mb-1.5 block">Spécialités</label>
             <SpecialtyTags
               selected={form.specialties}
               onChange={(tags) => updateForm({ specialties: tags })}
@@ -389,7 +396,7 @@ export function CoachProfileForm() {
           />
 
           <Input
-            label="Rayon de deplacement (km)"
+            label="Rayon de déplacement (km)"
             type="number"
             min={1}
             max={200}
@@ -430,13 +437,13 @@ export function CoachProfileForm() {
             <div>
               <label className="text-sm font-medium text-text mb-1.5 block">Instagram</label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">@</span>
-                <input
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted z-10">@</span>
+                <Input
                   type="text"
                   value={form.instagram}
                   onChange={(e) => updateForm({ instagram: e.target.value.replace(/^@/, '') })}
                   placeholder="votre_handle"
-                  className="w-full rounded-xl border border-gray-300 pl-8 pr-3 py-2.5 text-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                  className="pl-8"
                 />
               </div>
             </div>
@@ -453,7 +460,7 @@ export function CoachProfileForm() {
           {/* Preview card */}
           <div>
             <p className="text-sm font-medium text-text mb-3">
-              Apercu de votre profil
+              Aperçu de votre profil
             </p>
             <div className="rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
               {/* Header with gradient */}
@@ -480,7 +487,7 @@ export function CoachProfileForm() {
                     </h3>
                     {form.yearsExperience > 0 && (
                       <p className="text-sm text-white/80">
-                        {form.yearsExperience} an{form.yearsExperience > 1 ? 's' : ''} d&apos;experience
+                        {form.yearsExperience} an{form.yearsExperience > 1 ? 's' : ''} d&apos;expérience
                       </p>
                     )}
                     {/* Stars */}
@@ -501,7 +508,7 @@ export function CoachProfileForm() {
                           ))}
                         </div>
                         <span className="text-xs text-white/70 ml-1">
-                          ({profileMeta.totalSessions} seances)
+                          ({profileMeta.totalSessions} séances)
                         </span>
                       </div>
                     )}
@@ -549,7 +556,7 @@ export function CoachProfileForm() {
                 <div className="flex flex-wrap items-center gap-3 text-sm text-gray-500">
                   {(form.lat || userProfile?.city) && (
                     <span className="inline-flex items-center gap-1">
-                      📍 {userProfile?.city || 'Position definie'} ({form.radius} km)
+                      📍 {userProfile?.city || 'Position définie'} ({form.radius} km)
                     </span>
                   )}
                   {form.hourlyRate && (
@@ -581,7 +588,7 @@ export function CoachProfileForm() {
       )}
 
       {/* ─── Footer actions ────────────────────────────────────────── */}
-      <div className="mt-8 flex gap-3">
+      <div className="sticky bottom-0 bg-white border-t border-gray-100 px-4 py-4 -mx-4 mt-6 flex gap-3">
         {step > 0 ? (
           <Button variant="secondary" onClick={handleBack} className="flex-1 sm:flex-none">
             Retour

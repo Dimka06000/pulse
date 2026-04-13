@@ -109,6 +109,16 @@ export function SessionWizardModal({
     setError(null);
   }, [editSession, open]);
 
+  // Close on Escape key
+  useEffect(() => {
+    if (!open) return;
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose();
+    }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
+
   if (!open) return null;
 
   function updateForm(updates: Partial<FormData>) {
@@ -173,7 +183,7 @@ export function SessionWizardModal({
     : null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" aria-label={isEdit ? 'Modifier la séance' : 'Nouvelle séance'}>
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
 
       <div className="relative w-full max-w-lg rounded-t-2xl sm:rounded-2xl bg-white shadow-xl max-h-[90vh] overflow-y-auto">
@@ -185,6 +195,7 @@ export function SessionWizardModal({
             </h2>
             <button
               onClick={onClose}
+              aria-label="Fermer"
               className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-500 hover:bg-gray-200 transition"
             >
               ✕
