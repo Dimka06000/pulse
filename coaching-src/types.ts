@@ -527,6 +527,11 @@ export interface UpdateCoachProfileInput {
   lng?: number;
   radius?: number;
   acceptsAnonymousReviews?: boolean;
+  displayName?: string;
+  yearsExperience?: number;
+  mainSports?: string[];
+  instagram?: string;
+  website?: string;
 }
 
 // ─── Social Layer Input Types ───────────────────────────────────────

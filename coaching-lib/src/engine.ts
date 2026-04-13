@@ -254,6 +254,11 @@ export async function updateCoachProfile(
   if (input.radius !== undefined) updateData.radius = input.radius;
   if (input.acceptsAnonymousReviews !== undefined)
     updateData.accepts_anonymous_reviews = input.acceptsAnonymousReviews;
+  if (input.displayName !== undefined) updateData.display_name = input.displayName;
+  if (input.yearsExperience !== undefined) updateData.years_experience = input.yearsExperience;
+  if (input.mainSports !== undefined) updateData.main_sports = input.mainSports;
+  if (input.instagram !== undefined) updateData.instagram = input.instagram;
+  if (input.website !== undefined) updateData.website = input.website;
 
   const { data, error } = await supabase
     .from('coach_profiles')

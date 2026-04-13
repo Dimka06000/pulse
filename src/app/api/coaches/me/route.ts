@@ -18,7 +18,15 @@ export async function GET() {
     if (!profile) {
       return NextResponse.json({ error: 'Profil coach introuvable' }, { status: 404 });
     }
-    return NextResponse.json(profile);
+
+    // Also fetch user profile for avatar/name
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('first_name, last_name, avatar_url, city')
+      .eq('id', user.id)
+      .single();
+
+    return NextResponse.json({ ...profile, user_profile: userProfile });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
