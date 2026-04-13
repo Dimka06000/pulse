@@ -3,109 +3,78 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select } from '@/components/ui/select';
 import { formatPrice } from '@oikos/coaching';
+import {
+  SPORT_LABELS,
+  SPORT_EMOJIS,
+  SPORT_GRADIENT_CLASSES,
+  type Sport,
+} from '@/lib/sports';
+import {
+  SessionWizardModal,
+  type SessionTemplate,
+} from '@/components/coach/session-wizard-modal';
 
-type Session = {
-  id: string;
-  title: string;
-  sport: string;
-  description: string | null;
-  level: string;
-  type: string;
-  max_participants: number;
-  duration: number;
-  price: number;
+const LEVELS: Record<string, string> = {
+  all: 'Tous niveaux',
+  beginner: 'Débutant',
+  intermediate: 'Intermédiaire',
+  advanced: 'Avancé',
+};
+
+const TYPES: Record<string, { label: string; icon: string }> = {
+  individual: { label: 'Individuel', icon: '👤' },
+  group: { label: 'Groupe', icon: '👥' },
+  online: { label: 'En ligne', icon: '💻' },
 };
 
 interface SessionsManagerProps {
-  initialSessions: Session[];
+  initialSessions: SessionTemplate[];
 }
-
-const LEVELS = [
-  { value: 'discovery', label: 'Découverte' },
-  { value: 'standard', label: 'Standard' },
-  { value: 'advanced', label: 'Avancé' },
-  { value: 'intensive', label: 'Intensif' },
-];
-
-const TYPES = [
-  { value: 'one_on_one', label: 'Individuel' },
-  { value: 'group', label: 'Groupe' },
-  { value: 'workshop', label: 'Atelier' },
-  { value: 'assessment', label: 'Évaluation' },
-];
 
 export function SessionsManager({ initialSessions }: SessionsManagerProps) {
   const router = useRouter();
-  const [sessions, setSessions] = useState(initialSessions);
-  const [showForm, setShowForm] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [sessions, setSessions] = useState<SessionTemplate[]>(initialSessions);
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [editSession, setEditSession] = useState<SessionTemplate | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  const [title, setTitle] = useState('');
-  const [sport, setSport] = useState('');
-  const [description, setDescription] = useState('');
-  const [level, setLevel] = useState('standard');
-  const [type, setType] = useState('one_on_one');
-  const [maxParticipants, setMaxParticipants] = useState(1);
-  const [duration, setDuration] = useState(60);
-  const [price, setPrice] = useState(50);
-
-  function resetForm() {
-    setTitle('');
-    setSport('');
-    setDescription('');
-    setLevel('standard');
-    setType('one_on_one');
-    setMaxParticipants(1);
-    setDuration(60);
-    setPrice(50);
-    setError(null);
+  function handleCreate() {
+    setEditSession(null);
+    setWizardOpen(true);
   }
 
-  async function handleCreate() {
-    if (!title.trim() || !sport.trim()) {
-      setError('Titre et sport sont requis');
-      return;
+  function handleEdit(session: SessionTemplate) {
+    setEditSession(session);
+    setWizardOpen(true);
+  }
+
+  function handleSaved(saved: SessionTemplate) {
+    if (editSession) {
+      setSessions((prev) => prev.map((s) => (s.id === saved.id ? saved : s)));
+    } else {
+      setSessions((prev) => [saved, ...prev]);
     }
+    setEditSession(null);
+    router.refresh();
+  }
 
-    setLoading(true);
-    setError(null);
-
+  async function handleDelete(id: string) {
+    setDeleting(true);
     try {
-      const res = await fetch('/api/coaches/me/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: title.trim(),
-          sport: sport.trim(),
-          description: description.trim() || null,
-          level,
-          type,
-          max_participants: maxParticipants,
-          duration,
-          price,
-        }),
+      const res = await fetch(`/api/coaches/me/sessions?id=${id}`, {
+        method: 'DELETE',
       });
-
-      if (!res.ok) {
-        const data = await res.json();
-        setError(data.error || 'Erreur de création');
-        return;
+      if (res.ok) {
+        setSessions((prev) => prev.filter((s) => s.id !== id));
+        router.refresh();
       }
-
-      const newSession = await res.json();
-      setSessions((prev) => [newSession, ...prev]);
-      setShowForm(false);
-      resetForm();
-      router.refresh();
     } catch {
-      setError('Erreur de création');
+      // silent
     } finally {
-      setLoading(false);
+      setDeleting(false);
+      setDeleteId(null);
     }
   }
 
@@ -113,139 +82,135 @@ export function SessionsManager({ initialSessions }: SessionsManagerProps) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <p className="text-sm text-gray-500">
-          {sessions.length} séance{sessions.length !== 1 ? 's' : ''} configurée{sessions.length !== 1 ? 's' : ''}
+          {sessions.length} séance{sessions.length !== 1 ? 's' : ''} configurée
+          {sessions.length !== 1 ? 's' : ''}
         </p>
-        <Button onClick={() => setShowForm(!showForm)}>
-          {showForm ? 'Annuler' : 'Nouvelle séance'}
-        </Button>
+        <Button onClick={handleCreate}>+ Nouvelle séance</Button>
       </div>
 
-      {showForm && (
-        <div className="rounded-xl border border-gray-200 p-5 space-y-4">
-          <h3 className="font-semibold text-gray-900">Nouvelle séance</h3>
-
-          {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
-              {error}
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Input
-              placeholder="Titre de la séance"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-            <Input
-              placeholder="Sport (ex: Boxe, Yoga, Fitness)"
-              value={sport}
-              onChange={(e) => setSport(e.target.value)}
-            />
-          </div>
-
-          <Textarea
-            placeholder="Description (optionnel)"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            rows={3}
-          />
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div>
-              <Select
-                label="Niveau"
-                value={level}
-                onChange={(e) => setLevel(e.target.value)}
-                options={LEVELS}
-              />
-            </div>
-            <div>
-              <Select
-                label="Type"
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                options={TYPES}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Durée (min)</label>
-              <Input
-                type="number"
-                min={15}
-                max={180}
-                step={15}
-                value={duration}
-                onChange={(e) => setDuration(Number(e.target.value))}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Prix (EUR)</label>
-              <Input
-                type="number"
-                min={0}
-                step={5}
-                value={price}
-                onChange={(e) => setPrice(Number(e.target.value))}
-              />
-            </div>
-          </div>
-
-          {type === 'group' && (
-            <div>
-              <label className="text-xs text-gray-500 mb-1 block">Participants max</label>
-              <Input
-                type="number"
-                min={2}
-                max={50}
-                value={maxParticipants}
-                onChange={(e) => setMaxParticipants(Number(e.target.value))}
-              />
-            </div>
-          )}
-
-          <Button onClick={handleCreate} disabled={loading} className="w-full">
-            {loading ? 'Création...' : 'Créer la séance'}
-          </Button>
+      {sessions.length === 0 && (
+        <div className="text-center py-12 rounded-2xl border-2 border-dashed border-gray-200">
+          <span className="text-4xl block mb-3">🏋️</span>
+          <h3 className="font-semibold text-gray-900 mb-1">Aucune séance</h3>
+          <p className="text-sm text-gray-500 mb-4">
+            Créez votre première séance pour que vos clients puissent la réserver.
+          </p>
+          <Button onClick={handleCreate}>Créer une séance</Button>
         </div>
       )}
 
       <div className="space-y-3">
-        {sessions.map((session) => (
-          <div
-            key={session.id}
-            className="rounded-xl border border-gray-200 p-4"
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="font-semibold text-gray-900">{session.title}</h3>
-                <p className="text-sm text-gray-500 mt-1">{session.sport}</p>
-                {session.description && (
-                  <p className="text-sm text-gray-400 mt-1">{session.description}</p>
-                )}
-                <div className="flex gap-2 mt-2">
-                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
-                    {LEVELS.find((l) => l.value === session.level)?.label || session.level}
-                  </span>
-                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
-                    {TYPES.find((t) => t.value === session.type)?.label || session.type}
-                  </span>
-                  <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
-                    {session.duration} min
-                  </span>
-                  {session.max_participants > 1 && (
-                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
-                      Max {session.max_participants}
+        {sessions.map((session) => {
+          const sport = session.sport as Sport;
+          const typeInfo = TYPES[session.type] || { label: session.type, icon: '📋' };
+
+          return (
+            <div
+              key={session.id}
+              className="rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+            >
+              {/* Color bar */}
+              <div
+                className={`h-1.5 bg-gradient-to-r ${
+                  SPORT_GRADIENT_CLASSES[sport] || 'from-gray-400 to-gray-500'
+                }`}
+              />
+
+              <div className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <span className="text-2xl flex-shrink-0 mt-0.5">
+                      {SPORT_EMOJIS[sport] || '⚡'}
                     </span>
-                  )}
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-gray-900 truncate">
+                        {session.title}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {SPORT_LABELS[sport] || session.sport}
+                      </p>
+                      {session.description && (
+                        <p className="text-sm text-gray-400 mt-1 line-clamp-2">
+                          {session.description}
+                        </p>
+                      )}
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        <span className="inline-flex items-center gap-1 text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                          {typeInfo.icon} {typeInfo.label}
+                        </span>
+                        <span className="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                          {LEVELS[session.level] || session.level}
+                        </span>
+                        <span className="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                          {session.duration} min
+                        </span>
+                        {session.type === 'group' && session.max_participants > 1 && (
+                          <span className="text-[11px] bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                            Max {session.max_participants}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                    <span className="text-lg font-bold text-brand-600">
+                      {formatPrice(Math.round(session.price * 100))}
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => handleEdit(session)}
+                        className="text-xs text-gray-400 hover:text-brand-600 px-2 py-1 rounded-lg hover:bg-brand-50 transition"
+                      >
+                        Modifier
+                      </button>
+                      <button
+                        onClick={() => setDeleteId(session.id)}
+                        className="text-xs text-gray-400 hover:text-red-600 px-2 py-1 rounded-lg hover:bg-red-50 transition"
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <span className="text-lg font-bold text-brand-600">
-                {formatPrice(Math.round(session.price * 100))}
-              </span>
+
+              {/* Delete confirmation */}
+              {deleteId === session.id && (
+                <div className="border-t border-gray-100 bg-red-50 px-4 py-3 flex items-center justify-between">
+                  <p className="text-sm text-red-700">Supprimer cette séance ?</p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDeleteId(null)}
+                    >
+                      Annuler
+                    </Button>
+                    <button
+                      onClick={() => handleDelete(session.id)}
+                      disabled={deleting}
+                      className="text-xs font-medium text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-lg transition disabled:opacity-50"
+                    >
+                      {deleting ? 'Suppression...' : 'Confirmer'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
+      <SessionWizardModal
+        open={wizardOpen}
+        onClose={() => {
+          setWizardOpen(false);
+          setEditSession(null);
+        }}
+        onSaved={handleSaved}
+        editSession={editSession}
+      />
     </div>
   );
 }

@@ -3,20 +3,8 @@
 import { useState, useEffect } from 'react';
 import { EmptyState } from '@/components/pulse/empty-state';
 import { SessionsManager } from './sessions-manager';
+import type { SessionTemplate } from '@/components/coach/session-wizard-modal';
 
-type Session = {
-  id: string;
-  title: string;
-  sport: string;
-  description: string | null;
-  level: string;
-  type: string;
-  max_participants: number;
-  duration: number;
-  price: number;
-};
-
-// Skeleton loader
 function SessionsSkeleton() {
   return (
     <div className="mx-auto max-w-3xl space-y-4 px-4 py-8">
@@ -29,7 +17,7 @@ function SessionsSkeleton() {
 }
 
 export default function CoachSessionsPage() {
-  const [sessions, setSessions] = useState<Session[]>([]);
+  const [sessions, setSessions] = useState<SessionTemplate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
@@ -44,9 +32,7 @@ export default function CoachSessionsPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return <SessionsSkeleton />;
-  }
+  if (loading) return <SessionsSkeleton />;
 
   if (error) {
     return (
@@ -65,9 +51,7 @@ export default function CoachSessionsPage() {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-text mb-6">
-        Mes séances
-      </h1>
+      <h1 className="text-2xl font-bold text-text mb-6">Mes séances</h1>
       <SessionsManager initialSessions={sessions} />
     </div>
   );
