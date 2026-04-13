@@ -11,6 +11,8 @@ import {
 import { SessionLibrary } from './session-library';
 import { WeekGrid } from './week-grid';
 import { CycleOverlay } from './cycle-overlay';
+import { RulesPanel } from './rules-panel';
+import { RuleEditorModal, type ProgramRule } from './rule-editor-modal';
 import { SPORT_EMOJIS, type Sport } from '@/lib/sports';
 import type { DraggableItem } from './draggable-session-card';
 
@@ -82,9 +84,15 @@ export function ProgramBuilder({
   const [loadData, setLoadData] = useState<{ history: { date: string; tsb: number }[] } | null>(null);
   const [cycleData, setCycleData] = useState<{ lastPeriodDate: string; avgCycleDays: number; avgPeriodDays: number } | null>(null);
 
+  // Rules state
+  const [rules, setRules] = useState<ProgramRule[]>([]);
+  const [ruleEditorOpen, setRuleEditorOpen] = useState(false);
+  const [editRule, setEditRule] = useState<ProgramRule | null>(null);
+  const [routinesList, setRoutinesList] = useState<{ id: string; title: string; type: string }[]>([]);
+
   // Fetch pro mode data when enabled
   useEffect(() => {
-    if (!proMode) { setLoadData(null); setCycleData(null); return; }
+    if (!proMode) { setLoadData(null); setCycleData(null); setRules([]); return; }
 
     fetch(`/api/programs/${programId}/load-analysis`)
       .then((r) => (r.ok ? r.json() : null))
@@ -97,6 +105,11 @@ export function ProgramBuilder({
         .then(setCycleData)
         .catch(() => setCycleData(null));
     }
+
+    fetch(`/api/programs/${programId}/rules`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then(setRules)
+      .catch(() => setRules([]));
   }, [proMode, programId, athleteId]);
 
   // Sync workouts when initialWorkouts changes (after refetch)
@@ -125,16 +138,16 @@ export function ProgramBuilder({
     fetch('/api/routines')
       .then((r) => (r.ok ? r.json() : []))
       .then((data: Array<Record<string, unknown>>) => {
-        setRoutines(
-          data.map((r) => ({
-            id: String(r.id),
-            kind: 'routine' as const,
-            title: String(r.title || ''),
-            duration: Number(r.duration_minutes || 15),
-            sport: String(r.sport || ''),
-            type: String(r.type || ''),
-          }))
-        );
+        const mapped = data.map((r) => ({
+          id: String(r.id),
+          kind: 'routine' as const,
+          title: String(r.title || ''),
+          duration: Number(r.duration_minutes || 15),
+          sport: String(r.sport || ''),
+          type: String(r.type || ''),
+        }));
+        setRoutines(mapped);
+        setRoutinesList(mapped.map((r) => ({ id: r.id, title: r.title, type: r.type })));
       })
       .catch(() => setRoutines([]));
   }, []);
@@ -198,6 +211,35 @@ export function ProgramBuilder({
     },
     [programId, onWorkoutsChange]
   );
+
+  async function handleDeleteRule(ruleId: string) {
+    const res = await fetch(`/api/programs/${programId}/rules?rule_id=${ruleId}`, { method: 'DELETE' });
+    if (res.ok) setRules(prev => prev.filter(r => r.id !== ruleId));
+  }
+
+  async function handleToggleRule(ruleId: string, active: boolean) {
+    const res = await fetch(`/api/programs/${programId}/rules`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rule_id: ruleId, is_active: active }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setRules(prev => prev.map(r => r.id === updated.id ? updated : r));
+    }
+  }
+
+  async function handleAddTemplate(template: Record<string, unknown>) {
+    const res = await fetch(`/api/programs/${programId}/rules`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(template),
+    });
+    if (res.ok) {
+      const created = await res.json();
+      setRules(prev => [...prev, created]);
+    }
+  }
 
   const weeks = Array.from({ length: program.duration_weeks }, (_, i) => i + 1);
   const weekWorkouts = workouts.filter((w) => w.week_number === activeWeek);
@@ -298,9 +340,37 @@ export function ProgramBuilder({
               onDeleteWorkout={onDeleteWorkout}
               tsbByDay={tsbByDay}
             />
+            {proMode && (
+              <RulesPanel
+                rules={rules}
+                onAddRule={() => { setEditRule(null); setRuleEditorOpen(true); }}
+                onEditRule={(rule) => { setEditRule(rule); setRuleEditorOpen(true); }}
+                onDeleteRule={handleDeleteRule}
+                onToggleRule={handleToggleRule}
+                onAddTemplate={handleAddTemplate}
+              />
+            )}
           </div>
         </div>
       </div>
+
+      {/* Rule editor modal */}
+      <RuleEditorModal
+        open={ruleEditorOpen}
+        onClose={() => { setRuleEditorOpen(false); setEditRule(null); }}
+        onSaved={(saved) => {
+          if (editRule) {
+            setRules(prev => prev.map(r => r.id === saved.id ? saved : r));
+          } else {
+            setRules(prev => [...prev, saved]);
+          }
+          setRuleEditorOpen(false);
+          setEditRule(null);
+        }}
+        programId={programId}
+        routines={routinesList}
+        editRule={editRule}
+      />
 
       {/* Drag overlay — floating ghost */}
       <DragOverlay>
