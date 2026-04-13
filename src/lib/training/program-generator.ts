@@ -2,6 +2,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import type { ScrapedEvent } from './event-scraper';
+import { searchTrainingEvidence, type PubMedResult } from './pubmed-search';
 
 export interface GenerationInput {
   event: ScrapedEvent | null;
@@ -91,10 +92,24 @@ ${input.exerciseCatalog.map((e) => `- ${e.name} (${e.sport}, ${e.category})`).jo
   return parts.join('\n\n');
 }
 
+function buildEvidenceSection(evidence: PubMedResult[]): string {
+  if (evidence.length === 0) return '';
+  const lines = evidence.map((e) => {
+    const citation = [e.authors, e.year].filter(Boolean).join(', ');
+    const snippet = e.abstract ? ` ${e.abstract}` : '';
+    return `- ${e.title} (${citation} — ${e.journal}):${snippet}`;
+  });
+  return `\n\n## Recherche scientifique pertinente\n${lines.join('\n')}\nBase le programme sur ces données probantes quand c'est pertinent.`;
+}
+
 export async function generateProgram(input: GenerationInput): Promise<GeneratedWorkout[]> {
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-  const userPrompt = buildUserPrompt(input);
+  // Enrich prompt with PubMed evidence (non-blocking — fails silently)
+  const goal = input.event?.name ?? 'general fitness';
+  const evidence = await searchTrainingEvidence(input.sport, goal).catch(() => []);
+
+  const userPrompt = buildUserPrompt(input) + buildEvidenceSection(evidence);
 
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',

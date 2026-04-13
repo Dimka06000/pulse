@@ -16,6 +16,7 @@ import { AdjustmentPanel } from './adjustment-panel';
 import { FeedbackPanel } from './feedback-panel';
 import { RuleEditorModal, type ProgramRule } from './rule-editor-modal';
 import { LoadChart } from './load-chart';
+import { EvidencePanel } from './evidence-panel';
 import { SPORT_EMOJIS, type Sport } from '@/lib/sports';
 import type { DraggableItem } from './draggable-session-card';
 
@@ -341,6 +342,12 @@ export function ProgramBuilder({
                 history={loadData.history}
                 blocks={blocks?.map((b) => ({ phase: b.phase, weekStart: b.week_start, weekEnd: b.week_end }))}
                 totalWeeks={program.duration_weeks}
+              />
+            )}
+            {proMode && (
+              <EvidencePanel
+                programId={programId}
+                sport={program.sport}
               />
             )}
             <WeekGrid
