@@ -351,6 +351,12 @@ export function ProgramBuilder({
               tsbByDay={tsbByDay}
             />
             {proMode && (
+              <AdjustmentPanel
+                programId={programId}
+                onAdjustmentsApplied={onWorkoutsChange}
+              />
+            )}
+            {proMode && (
               <RulesPanel
                 rules={rules}
                 onAddRule={() => { setEditRule(null); setRuleEditorOpen(true); }}
