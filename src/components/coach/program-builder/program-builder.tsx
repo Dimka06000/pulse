@@ -12,6 +12,7 @@ import { SessionLibrary } from './session-library';
 import { WeekGrid } from './week-grid';
 import { CycleOverlay } from './cycle-overlay';
 import { RulesPanel } from './rules-panel';
+import { AdjustmentPanel } from './adjustment-panel';
 import { FeedbackPanel } from './feedback-panel';
 import { RuleEditorModal, type ProgramRule } from './rule-editor-modal';
 import { LoadChart } from './load-chart';
