@@ -8,6 +8,8 @@ import { useToast } from '@/components/pulse/toast';
 import { PushToDevice } from '@/components/pulse/push-to-device';
 import { SPORT_LABELS, SPORT_EMOJIS, type Sport } from '@/lib/sports';
 import { WorkoutEditorModal, type WorkoutData } from '@/components/coach/workout-editor-modal';
+import { TimelineBar, type ProgramBlock } from '@/components/coach/program-builder/timeline-bar';
+import { BlockEditorModal } from '@/components/coach/program-builder/block-editor-modal';
 
 interface Workout {
   id: string;
@@ -48,6 +50,11 @@ export default function ProgramDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeWeek, setActiveWeek] = useState(1);
 
+  // Periodization blocks
+  const [blocks, setBlocks] = useState<ProgramBlock[]>([]);
+  const [blockEditorOpen, setBlockEditorOpen] = useState(false);
+  const [editBlock, setEditBlock] = useState<ProgramBlock | null>(null);
+
   // Workout editor modal state
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorDay, setEditorDay] = useState(1);
@@ -84,7 +91,8 @@ export default function ProgramDetailPage() {
 
   useEffect(() => {
     fetchProgram();
-  }, [fetchProgram]);
+    fetch(`/api/programs/${id}/blocks`).then(r => r.ok ? r.json() : []).then(setBlocks);
+  }, [fetchProgram, id]);
 
   // Fetch clients when assign panel opens
   useEffect(() => {
@@ -232,6 +240,29 @@ export default function ProgramDetailPage() {
     }
   };
 
+  async function handleAutoPeriodize() {
+    if (!program) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const eventDate = new Date();
+    eventDate.setDate(eventDate.getDate() + program.duration_weeks * 7);
+
+    const res = await fetch(`/api/programs/${id}/periodize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        startDate: today,
+        eventDate: eventDate.toISOString().slice(0, 10),
+        sport: program.sport,
+        athleteLevel: 'intermediate',
+      }),
+    });
+    if (res.ok) {
+      const newBlocks = await res.json();
+      setBlocks(newBlocks);
+      toast('success', 'Périodisation générée', `${newBlocks.length} blocs créés`);
+    }
+  }
+
   if (loading) {
     return (
       <>
@@ -262,6 +293,9 @@ export default function ProgramDetailPage() {
             </p>
           </div>
           <div className="flex gap-2 flex-wrap">
+            <Button size="sm" variant="secondary" onClick={handleAutoPeriodize}>
+              Auto-périodiser
+            </Button>
             <Button size="sm" variant={program.is_published ? 'secondary' : 'primary'} onClick={togglePublish}>
               {program.is_published ? 'Dépublier' : 'Publier'}
             </Button>
@@ -322,6 +356,19 @@ export default function ProgramDetailPage() {
 
         {program.description && (
           <p className="mb-6 text-sm text-muted">{program.description}</p>
+        )}
+
+        {/* Periodization timeline */}
+        {blocks.length > 0 && (
+          <div className="mb-6">
+            <TimelineBar
+              blocks={blocks}
+              totalWeeks={program.duration_weeks}
+              activeWeek={activeWeek}
+              onBlockClick={(block) => { setEditBlock(block); setBlockEditorOpen(true); }}
+              onAddBlock={() => { setEditBlock(null); setBlockEditorOpen(true); }}
+            />
+          </div>
         )}
 
         {/* Week tabs */}
@@ -464,6 +511,23 @@ export default function ProgramDetailPage() {
         dayNumber={editorDay}
         programId={program.id}
         editWorkout={editWorkout}
+      />
+
+      {/* Block editor modal */}
+      <BlockEditorModal
+        open={blockEditorOpen}
+        onClose={() => { setBlockEditorOpen(false); setEditBlock(null); }}
+        onSaved={(saved) => {
+          if (editBlock) {
+            setBlocks(prev => prev.map(b => b.id === saved.id ? saved : b));
+          } else {
+            setBlocks(prev => [...prev, saved]);
+          }
+          setBlockEditorOpen(false);
+          setEditBlock(null);
+        }}
+        programId={id}
+        editBlock={editBlock}
       />
     </>
   );
