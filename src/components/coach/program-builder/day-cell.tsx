@@ -2,6 +2,7 @@
 
 import { useDroppable } from '@dnd-kit/core';
 import { SPORT_GRADIENT_CLASSES, type Sport } from '@/lib/sports';
+import { LoadOverlay } from './load-overlay';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export interface WorkoutCard {
@@ -20,6 +21,7 @@ interface DayCellProps {
   onAddWorkout: () => void;
   onClickWorkout: (workout: WorkoutCard) => void;
   onDeleteWorkout: (workoutId: string) => void;
+  tsb?: number;
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -31,6 +33,7 @@ export function DayCell({
   onAddWorkout,
   onClickWorkout,
   onDeleteWorkout,
+  tsb,
 }: DayCellProps) {
   const droppableId = `drop-${weekNumber}-${dayNumber}`;
   const { setNodeRef, isOver } = useDroppable({ id: droppableId });
@@ -46,7 +49,10 @@ export function DayCell({
     >
       {/* Header */}
       <div className="flex items-center justify-between mb-2">
-        <span className="text-sm font-semibold text-gray-700">{dayLabel}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm font-semibold text-gray-700">{dayLabel}</span>
+          {tsb !== undefined && <LoadOverlay tsb={tsb} />}
+        </div>
         <button
           onClick={onAddWorkout}
           className="flex h-6 w-6 items-center justify-center rounded-md text-brand-500 hover:bg-brand-50 transition text-xs font-bold"

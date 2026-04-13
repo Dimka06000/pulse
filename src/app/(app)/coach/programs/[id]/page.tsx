@@ -30,6 +30,8 @@ interface Program {
   duration_weeks: number;
   is_published: boolean;
   price: number;
+  pro_mode?: boolean;
+  athlete_id?: string;
   program_workouts: Workout[];
 }
 
@@ -254,6 +256,23 @@ export default function ProgramDetailPage() {
             </p>
           </div>
           <div className="flex gap-2 flex-wrap">
+            <button
+              onClick={async () => {
+                const res = await fetch(`/api/programs/${id}`, {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ pro_mode: !program.pro_mode }),
+                });
+                if (res.ok) fetchProgram();
+              }}
+              className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+                program.pro_mode
+                  ? 'bg-violet-500 text-white border-violet-500'
+                  : 'bg-white text-gray-500 border-gray-300 hover:border-violet-400'
+              }`}
+            >
+              {program.pro_mode ? '🔬 Mode Pro' : 'Mode Pro'}
+            </button>
             <Button size="sm" variant="secondary" onClick={() => setShowGenerateConfirm(true)}>
               Générer avec l&apos;IA
             </Button>
@@ -382,6 +401,8 @@ export default function ProgramDetailPage() {
             onWorkoutsChange={fetchProgram}
             onClickWorkout={(w) => { openEditorForWorkout(w as Workout); }}
             onDeleteWorkout={handleDeleteWorkout}
+            proMode={program.pro_mode}
+            athleteId={program.athlete_id}
           />
         </div>
       </div>

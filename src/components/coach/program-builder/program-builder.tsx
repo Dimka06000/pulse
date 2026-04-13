@@ -10,6 +10,7 @@ import {
 } from '@dnd-kit/core';
 import { SessionLibrary } from './session-library';
 import { WeekGrid } from './week-grid';
+import { CycleOverlay } from './cycle-overlay';
 import { SPORT_EMOJIS, type Sport } from '@/lib/sports';
 import type { DraggableItem } from './draggable-session-card';
 
@@ -51,6 +52,8 @@ interface ProgramBuilderProps {
   onWorkoutsChange: () => void;
   onClickWorkout: (workout: Workout) => void;
   onDeleteWorkout: (workoutId: string) => void;
+  proMode?: boolean;
+  athleteId?: string;
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -63,6 +66,8 @@ export function ProgramBuilder({
   onWorkoutsChange,
   onClickWorkout,
   onDeleteWorkout,
+  proMode,
+  athleteId,
 }: ProgramBuilderProps) {
   const [activeWeek, setActiveWeek] = useState(1);
   const [workouts, setWorkouts] = useState<Workout[]>(initialWorkouts || []);
@@ -72,6 +77,27 @@ export function ProgramBuilder({
   const [libraryOpen, setLibraryOpen] = useState(
     typeof window !== 'undefined' ? window.innerWidth >= 768 : true
   );
+
+  // Pro mode data
+  const [loadData, setLoadData] = useState<{ history: { date: string; tsb: number }[] } | null>(null);
+  const [cycleData, setCycleData] = useState<{ lastPeriodDate: string; avgCycleDays: number; avgPeriodDays: number } | null>(null);
+
+  // Fetch pro mode data when enabled
+  useEffect(() => {
+    if (!proMode) { setLoadData(null); setCycleData(null); return; }
+
+    fetch(`/api/programs/${programId}/load-analysis`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then(setLoadData)
+      .catch(() => setLoadData(null));
+
+    if (athleteId) {
+      fetch('/api/cycle-tracking')
+        .then((r) => (r.ok ? r.json() : null))
+        .then(setCycleData)
+        .catch(() => setCycleData(null));
+    }
+  }, [proMode, programId, athleteId]);
 
   // Sync workouts when initialWorkouts changes (after refetch)
   useEffect(() => {
@@ -176,6 +202,27 @@ export function ProgramBuilder({
   const weeks = Array.from({ length: program.duration_weeks }, (_, i) => i + 1);
   const weekWorkouts = workouts.filter((w) => w.week_number === activeWeek);
   const sportEmoji = SPORT_EMOJIS[program.sport as Sport] || '⚡';
+  const programStartDate = new Date().toISOString().slice(0, 10);
+
+  // Calculate TSB per day for the active week from loadData
+  const tsbByDay: Record<number, number> | undefined = (() => {
+    if (!proMode || !loadData?.history?.length) return undefined;
+    const startMs = new Date(programStartDate).getTime();
+    const weekOffsetDays = (activeWeek - 1) * 7;
+    const result: Record<number, number> = {};
+    for (let d = 1; d <= 7; d++) {
+      const dateMs = startMs + (weekOffsetDays + (d - 1)) * 24 * 60 * 60 * 1000;
+      const iso = new Date(dateMs).toISOString().slice(0, 10);
+      // Find closest TSB entry on or before this date
+      let closestTsb: number | undefined;
+      for (const entry of loadData.history) {
+        if (entry.date <= iso) closestTsb = entry.tsb;
+        else break;
+      }
+      if (closestTsb !== undefined) result[d] = closestTsb;
+    }
+    return Object.keys(result).length > 0 ? result : undefined;
+  })();
 
   return (
     <DndContext
@@ -237,12 +284,19 @@ export function ProgramBuilder({
 
           {/* Week grid */}
           <div className="flex-1 overflow-y-auto p-4">
+            {proMode && cycleData && (
+              <CycleOverlay
+                cycleData={cycleData}
+                weekNumber={activeWeek}
+                programStartDate={programStartDate}
+              />
+            )}
             <WeekGrid
               weekNumber={activeWeek}
               workouts={weekWorkouts}
-              sport={program.sport}
               onClickWorkout={onClickWorkout}
               onDeleteWorkout={onDeleteWorkout}
+              tsbByDay={tsbByDay}
             />
           </div>
         </div>
