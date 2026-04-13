@@ -273,6 +273,11 @@ export default function ProgramDetailPage() {
             >
               {program.pro_mode ? '🔬 Mode Pro' : 'Mode Pro'}
             </button>
+            <Button size="sm" variant="secondary" onClick={() => {
+              window.open(`/api/programs/${id}/calendar`, '_blank');
+            }}>
+              📅 Exporter calendrier
+            </Button>
             <Button size="sm" variant="secondary" onClick={() => setShowGenerateConfirm(true)}>
               Générer avec l&apos;IA
             </Button>
