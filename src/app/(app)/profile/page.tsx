@@ -16,10 +16,14 @@ export default function ProfilePage() {
   const [becomingCoach, setBecomingCoach] = useState(false);
 
   const handleLogout = async () => {
-    const supabase = getSupabaseBrowserClient();
-    await supabase.auth.signOut();
+    try {
+      const supabase = getSupabaseBrowserClient();
+      await supabase.auth.signOut();
+    } catch {
+      // signOut can fail if session is already expired — continue anyway
+    }
     clear();
-    router.push('/login');
+    window.location.href = '/login';
   };
 
   const isCoach = userRole === 'coach' || userRole === 'both';
