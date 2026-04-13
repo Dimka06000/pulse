@@ -105,6 +105,19 @@ export default function ProfilePage() {
             </div>
           </Link>
 
+          <Link href="/profile/cycle">
+            <div className="flex items-center justify-between rounded-xl border border-border bg-white p-4">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">🔴</span>
+                <div>
+                  <span className="text-sm font-semibold text-text">Suivi du cycle</span>
+                  <p className="text-xs text-muted">Adapter l&apos;entraînement au cycle menstruel</p>
+                </div>
+              </div>
+              <span className="text-muted">→</span>
+            </div>
+          </Link>
+
           <div className="rounded-xl border border-border bg-white p-4">
             <p className="text-sm font-semibold text-text mb-3">Ma localisation</p>
             <AddressAutocomplete
