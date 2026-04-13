@@ -50,6 +50,13 @@ export interface LoadMetrics {
   tsb: number;
 }
 
+export interface LoadHistory {
+  date: string;
+  ctl: number;
+  atl: number;
+  tsb: number;
+}
+
 export interface RecoveryScore {
   score: number;
   status: 'ready' | 'moderate' | 'fatigued' | 'rest';
