@@ -66,6 +66,11 @@ export default function ProgramDetailPage() {
   // Inline delete confirmation
   const [confirmDeleteProgram, setConfirmDeleteProgram] = useState(false);
 
+  // AI generate
+  const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
+  const [generateLevel, setGenerateLevel] = useState<string>('intermediate');
+  const [generating, setGenerating] = useState(false);
+
   const fetchProgram = useCallback(async () => {
     try {
       const res = await fetch(`/api/programs/${id}`);
@@ -198,6 +203,30 @@ export default function ProgramDetailPage() {
     }
   }
 
+  async function handleGenerate() {
+    setGenerating(true);
+    try {
+      const res = await fetch(`/api/programs/${id}/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ athleteLevel: generateLevel }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        toast('success', 'Programme généré', `${data.count} séances créées`);
+        setShowGenerateConfirm(false);
+        fetchProgram();
+      } else {
+        const err = await res.json();
+        toast('error', 'Erreur', err.error || 'Échec de la génération');
+      }
+    } catch {
+      toast('error', 'Erreur', 'Connexion impossible');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
   if (loading) {
     return (
       <>
@@ -225,6 +254,9 @@ export default function ProgramDetailPage() {
             </p>
           </div>
           <div className="flex gap-2 flex-wrap">
+            <Button size="sm" variant="secondary" onClick={() => setShowGenerateConfirm(true)}>
+              Générer avec l&apos;IA
+            </Button>
             <Button size="sm" variant="secondary" onClick={handleAutoPeriodize}>
               Auto-périodiser
             </Button>
@@ -282,6 +314,43 @@ export default function ProgramDetailPage() {
                   <Button size="sm" onClick={handleAssign}>Assigner</Button>
                 </>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* AI Generate confirmation panel */}
+        {showGenerateConfirm && (
+          <div className="mb-6 rounded-2xl border border-brand-200 bg-brand-50 p-4">
+            <h4 className="mb-3 font-semibold text-text">Générer le programme avec l&apos;IA</h4>
+            <p className="text-sm text-muted mb-3">
+              L&apos;IA va créer des séances pour chaque semaine en fonction de la périodisation et du sport.
+            </p>
+            <div className="flex gap-2 mb-4">
+              {(['beginner', 'intermediate', 'advanced'] as const).map((level) => (
+                <button
+                  key={level}
+                  onClick={() => setGenerateLevel(level)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                    generateLevel === level
+                      ? 'bg-brand-500 text-white'
+                      : 'bg-white text-gray-600 border'
+                  }`}
+                >
+                  {level === 'beginner'
+                    ? 'Débutant'
+                    : level === 'intermediate'
+                      ? 'Intermédiaire'
+                      : 'Avancé'}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="ghost" onClick={() => setShowGenerateConfirm(false)}>
+                Annuler
+              </Button>
+              <Button size="sm" disabled={generating} onClick={handleGenerate}>
+                {generating ? 'Génération en cours...' : 'Générer'}
+              </Button>
             </div>
           </div>
         )}

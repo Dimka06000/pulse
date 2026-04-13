@@ -26,6 +26,14 @@ export type ProgramData = {
   created_at: string;
 };
 
+type EventFormData = {
+  hasTargetEvent: boolean;
+  eventName: string;
+  eventDate: string;
+  eventDistanceKm: number | null;
+  eventTerrainType: 'road' | 'trail' | 'mixed' | null;
+};
+
 type FormData = {
   sport: string;
   title: string;
@@ -33,7 +41,7 @@ type FormData = {
   level: string;
   duration_weeks: number;
   price: number;
-};
+} & EventFormData;
 
 interface ProgramWizardModalProps {
   open: boolean;
@@ -52,7 +60,13 @@ const LEVELS = [
 
 const WEEK_PRESETS = [4, 6, 8, 10, 12];
 
-const STEP_LABELS = ['Sport & Infos', 'Durée & Tarif', 'Aperçu'];
+const STEP_LABELS = ['Sport & Infos', 'Événement', 'Durée & Tarif', 'Aperçu'];
+
+const TERRAIN_TYPES = [
+  { value: 'road' as const, label: 'Route' },
+  { value: 'trail' as const, label: 'Trail' },
+  { value: 'mixed' as const, label: 'Mixte' },
+];
 
 const DEFAULT_FORM: FormData = {
   sport: '',
@@ -61,6 +75,11 @@ const DEFAULT_FORM: FormData = {
   level: 'all',
   duration_weeks: 8,
   price: 0,
+  hasTargetEvent: false,
+  eventName: '',
+  eventDate: '',
+  eventDistanceKm: null,
+  eventTerrainType: null,
 };
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -87,6 +106,11 @@ export function ProgramWizardModal({
         level: editProgram.level,
         duration_weeks: editProgram.duration_weeks,
         price: editProgram.price,
+        hasTargetEvent: false,
+        eventName: '',
+        eventDate: '',
+        eventDistanceKm: null,
+        eventTerrainType: null,
       });
       setCustomWeeks(!WEEK_PRESETS.includes(editProgram.duration_weeks));
       setStep(0);
@@ -106,12 +130,21 @@ export function ProgramWizardModal({
 
   function canGoNext(): boolean {
     if (step === 0) return !!form.sport && !!form.title.trim();
-    if (step === 1) return form.duration_weeks > 0 && form.price >= 0;
+    if (step === 1) return true; // event step is optional
+    if (step === 2) return form.duration_weeks > 0 && form.price >= 0;
     return true;
   }
 
   function handleNext() {
-    if (step < 2) setStep(step + 1);
+    // Auto-calculate duration from event date when leaving event step
+    if (step === 1 && form.hasTargetEvent && form.eventDate) {
+      const eventDate = new Date(form.eventDate);
+      const today = new Date();
+      const diffMs = eventDate.getTime() - today.getTime();
+      const diffWeeks = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 7)));
+      updateForm({ duration_weeks: diffWeeks });
+    }
+    if (step < 3) setStep(step + 1);
   }
 
   function handleBack() {
@@ -281,8 +314,92 @@ export function ProgramWizardModal({
             </div>
           )}
 
-          {/* Step 1: Durée & Tarif */}
+          {/* Step 1: Événement cible */}
           {step === 1 && (
+            <div className="space-y-5">
+              {/* Toggle */}
+              <label className="flex items-center gap-3 cursor-pointer">
+                <div
+                  onClick={() => updateForm({ hasTargetEvent: !form.hasTargetEvent })}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    form.hasTargetEvent ? 'bg-brand-500' : 'bg-gray-300'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
+                      form.hasTargetEvent ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </div>
+                <span className="text-sm font-medium text-gray-700">Préparer un événement ?</span>
+              </label>
+
+              {form.hasTargetEvent && (
+                <div className="space-y-4 pl-0.5">
+                  <Input
+                    label="Nom de l'événement"
+                    placeholder="Ex: Marathon de Paris, UTMB, Spartan Race..."
+                    value={form.eventName}
+                    onChange={(e) => updateForm({ eventName: e.target.value })}
+                  />
+
+                  <Input
+                    label="Date de l'événement"
+                    type="date"
+                    value={form.eventDate}
+                    onChange={(e) => updateForm({ eventDate: e.target.value })}
+                  />
+
+                  <Input
+                    label="Distance (km)"
+                    type="number"
+                    min={0}
+                    placeholder="42"
+                    value={form.eventDistanceKm ?? ''}
+                    onChange={(e) =>
+                      updateForm({
+                        eventDistanceKm: e.target.value ? Number(e.target.value) : null,
+                      })
+                    }
+                  />
+
+                  <div>
+                    <label className="text-sm font-medium text-gray-700 mb-2 block">Terrain</label>
+                    <div className="flex gap-2">
+                      {TERRAIN_TYPES.map((t) => (
+                        <button
+                          key={t.value}
+                          type="button"
+                          onClick={() =>
+                            updateForm({
+                              eventTerrainType:
+                                form.eventTerrainType === t.value ? null : t.value,
+                            })
+                          }
+                          className={`flex-1 rounded-lg px-3 py-2 text-xs font-medium transition-all ${
+                            form.eventTerrainType === t.value
+                              ? 'bg-brand-500 text-white shadow-sm'
+                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {!form.hasTargetEvent && (
+                <p className="text-sm text-gray-400">
+                  Vous pourrez toujours ajouter un événement cible plus tard.
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Step 2: Durée & Tarif */}
+          {step === 2 && (
             <div className="space-y-5">
               {/* Duration in weeks */}
               <div>
@@ -357,8 +474,8 @@ export function ProgramWizardModal({
             </div>
           )}
 
-          {/* Step 2: Preview */}
-          {step === 2 && (
+          {/* Step 3: Preview */}
+          {step === 3 && (
             <div className="space-y-5">
               <p className="text-sm text-gray-500">
                 Voici comment votre programme apparaîtra aux clients :
@@ -419,7 +536,7 @@ export function ProgramWizardModal({
             </Button>
           )}
 
-          {step < 2 ? (
+          {step < 3 ? (
             <Button onClick={handleNext} disabled={!canGoNext()} className="flex-1">
               Suivant
             </Button>
