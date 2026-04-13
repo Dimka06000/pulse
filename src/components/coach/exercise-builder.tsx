@@ -2,9 +2,21 @@
 
 import { useState, useMemo } from 'react';
 import { Input } from '@/components/ui/input';
+import {
+  DndContext,
+  closestCenter,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export interface ExerciseItem {
+  id: string;
   name: string;
   sets?: number;
   reps?: number;
@@ -32,17 +44,125 @@ const EXERCISE_PRESETS: Record<string, string[]> = {
 
 const CARDIO_SPORTS = ['running', 'cyclisme', 'natation', 'yoga'];
 
+// ─── Sortable exercise row ───────────────────────────────────────────────────
+interface SortableExerciseRowProps {
+  exercise: ExerciseItem;
+  onRemove: () => void;
+  onUpdate: (updates: Partial<ExerciseItem>) => void;
+}
+
+function SortableExerciseRow({ exercise, onRemove, onUpdate }: SortableExerciseRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: exercise.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="rounded-xl border border-gray-200 bg-gray-50 p-3 flex gap-2"
+    >
+      {/* Drag handle */}
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="flex items-start pt-0.5 text-gray-400 hover:text-gray-600 cursor-grab active:cursor-grabbing touch-none"
+        title="Réorganiser"
+        aria-label="Réorganiser cet exercice"
+      >
+        <span className="text-lg leading-none select-none">⠿</span>
+      </button>
+
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-semibold text-gray-800 truncate">{exercise.name}</span>
+          <button
+            type="button"
+            onClick={onRemove}
+            className="h-6 w-6 flex items-center justify-center rounded text-red-400 hover:bg-red-100 text-xs ml-2 flex-shrink-0"
+            title="Supprimer"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Inline editors */}
+        <div className="flex gap-2">
+          {exercise.duration_minutes !== undefined ? (
+            <div className="flex-1">
+              <label className="text-[10px] text-gray-500 block mb-0.5">Durée (min)</label>
+              <input
+                type="number"
+                min={1}
+                value={exercise.duration_minutes}
+                onChange={(e) => onUpdate({ duration_minutes: Number(e.target.value) })}
+                className="w-full rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-700 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+              />
+            </div>
+          ) : (
+            <>
+              <div className="flex-1">
+                <label className="text-[10px] text-gray-500 block mb-0.5">Séries</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={exercise.sets || 3}
+                  onChange={(e) => onUpdate({ sets: Number(e.target.value) })}
+                  className="w-full rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-700 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-[10px] text-gray-500 block mb-0.5">Reps</label>
+                <input
+                  type="number"
+                  min={1}
+                  value={exercise.reps || 10}
+                  onChange={(e) => onUpdate({ reps: Number(e.target.value) })}
+                  className="w-full rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-700 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="text-[10px] text-gray-500 block mb-0.5">Repos (s)</label>
+                <input
+                  type="number"
+                  min={0}
+                  step={15}
+                  value={exercise.rest_seconds || 90}
+                  onChange={(e) => onUpdate({ rest_seconds: Number(e.target.value) })}
+                  className="w-full rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-700 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                />
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Component ──────────────────────────────────────────────────────────────
 export function ExerciseBuilder({ sport, exercises, onChange }: ExerciseBuilderProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
   const isCardio = CARDIO_SPORTS.includes(sport);
 
-  // Get all available exercises for autocomplete
   const allPresets = useMemo(() => {
     const sportExercises = EXERCISE_PRESETS[sport] || [];
     const allExercises = new Set<string>(sportExercises);
-    // Also add fitness basics as fallback
     if (sport !== 'fitness') {
       (EXERCISE_PRESETS['fitness'] || []).forEach((e) => allExercises.add(e));
     }
@@ -64,8 +184,8 @@ export function ExerciseBuilder({ sport, exercises, onChange }: ExerciseBuilderP
   function addExercise(name: string) {
     if (exercises.some((e) => e.name === name)) return;
     const newExercise: ExerciseItem = isCardio
-      ? { name, duration_minutes: 10 }
-      : { name, sets: 3, reps: 10, rest_seconds: 90 };
+      ? { id: crypto.randomUUID(), name, duration_minutes: 10 }
+      : { id: crypto.randomUUID(), name, sets: 3, reps: 10, rest_seconds: 90 };
     onChange([...exercises, newExercise]);
     setSearchQuery('');
   }
@@ -86,13 +206,21 @@ export function ExerciseBuilder({ sport, exercises, onChange }: ExerciseBuilderP
     );
   }
 
-  function moveExercise(index: number, direction: -1 | 1) {
-    const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= exercises.length) return;
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = exercises.findIndex((ex) => ex.id === active.id);
+    const newIndex = exercises.findIndex((ex) => ex.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
     const arr = [...exercises];
-    [arr[index], arr[newIndex]] = [arr[newIndex], arr[index]];
+    const [moved] = arr.splice(oldIndex, 1);
+    arr.splice(newIndex, 0, moved);
     onChange(arr);
   }
+
+  const ids = exercises.map((ex) => ex.id);
 
   return (
     <div>
@@ -165,102 +293,18 @@ export function ExerciseBuilder({ sport, exercises, onChange }: ExerciseBuilderP
       {/* Exercise list */}
       {exercises.length > 0 && (
         <div className="mt-4 space-y-2">
-          {exercises.map((ex, i) => (
-            <div
-              key={`${ex.name}-${i}`}
-              className="rounded-xl border border-gray-200 bg-gray-50 p-3"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-semibold text-gray-800">{ex.name}</span>
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    onClick={() => moveExercise(i, -1)}
-                    disabled={i === 0}
-                    className="h-6 w-6 flex items-center justify-center rounded text-gray-400 hover:bg-gray-200 disabled:opacity-30 text-xs"
-                    title="Monter"
-                  >
-                    ▲
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => moveExercise(i, 1)}
-                    disabled={i === exercises.length - 1}
-                    className="h-6 w-6 flex items-center justify-center rounded text-gray-400 hover:bg-gray-200 disabled:opacity-30 text-xs"
-                    title="Descendre"
-                  >
-                    ▼
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeExercise(i)}
-                    className="h-6 w-6 flex items-center justify-center rounded text-red-400 hover:bg-red-100 text-xs"
-                    title="Supprimer"
-                  >
-                    ✕
-                  </button>
-                </div>
-              </div>
-
-              {/* Inline editors */}
-              <div className="flex gap-2">
-                {ex.duration_minutes !== undefined ? (
-                  <div className="flex-1">
-                    <label className="text-[10px] text-gray-500 block mb-0.5">Durée (min)</label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={ex.duration_minutes}
-                      onChange={(e) =>
-                        updateExercise(i, { duration_minutes: Number(e.target.value) })
-                      }
-                      className="w-full rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-700 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                    />
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex-1">
-                      <label className="text-[10px] text-gray-500 block mb-0.5">Séries</label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={ex.sets || 3}
-                        onChange={(e) =>
-                          updateExercise(i, { sets: Number(e.target.value) })
-                        }
-                        className="w-full rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-700 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-[10px] text-gray-500 block mb-0.5">Reps</label>
-                      <input
-                        type="number"
-                        min={1}
-                        value={ex.reps || 10}
-                        onChange={(e) =>
-                          updateExercise(i, { reps: Number(e.target.value) })
-                        }
-                        className="w-full rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-700 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-[10px] text-gray-500 block mb-0.5">Repos (s)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        step={15}
-                        value={ex.rest_seconds || 90}
-                        onChange={(e) =>
-                          updateExercise(i, { rest_seconds: Number(e.target.value) })
-                        }
-                        className="w-full rounded-md border border-gray-200 px-2 py-1 text-xs text-gray-700 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          ))}
+          <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={ids} strategy={verticalListSortingStrategy}>
+              {exercises.map((ex, i) => (
+                <SortableExerciseRow
+                  key={ex.id}
+                  exercise={ex}
+                  onRemove={() => removeExercise(i)}
+                  onUpdate={(updates) => updateExercise(i, updates)}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         </div>
       )}
 

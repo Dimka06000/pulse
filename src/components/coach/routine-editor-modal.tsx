@@ -80,7 +80,7 @@ export function RoutineEditorModal({
     if (editRoutine) {
       setTitle(editRoutine.title);
       setType(editRoutine.type);
-      setExercises(editRoutine.exercises?.exercises || []);
+      setExercises((editRoutine.exercises?.exercises || []).map((ex: ExerciseItem) => ({ id: crypto.randomUUID(), ...ex })));
       setDurationMinutes(editRoutine.duration_minutes);
       setDurationOverride(true);
     } else {

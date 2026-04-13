@@ -57,7 +57,7 @@ export function WorkoutEditorModal({
       setTitle(editWorkout.title);
       setDescription(editWorkout.description || '');
       setDurationMinutes(editWorkout.duration_minutes);
-      setExercises(editWorkout.workout_data?.exercises || []);
+      setExercises((editWorkout.workout_data?.exercises || []).map((ex: ExerciseItem) => ({ id: crypto.randomUUID(), ...ex })));
     } else {
       setTitle('');
       setDescription('');
