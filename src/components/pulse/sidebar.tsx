@@ -2,39 +2,34 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useAuthStore } from '@/stores/auth';
 import { useClubsStore } from '@/stores/clubs';
 import { useSidebar } from './sidebar-context';
 
-type NavItem = { href: string; icon: string; label: string };
+type NavItem = { href: string; icon: string; label: string; badge?: number };
 
-const athleteNav: NavItem[] = [
+// ── Main navigation (everyone sees this) ──────────────────────────────────
+const mainNav: NavItem[] = [
   { href: '/dashboard', icon: '🏠', label: 'Dashboard' },
-  { href: '/planning', icon: '📅', label: 'Planning' },
-  { href: '/programs', icon: '📋', label: 'Programmes' },
-  { href: '/progress', icon: '📊', label: 'Progres' },
-  { href: '/goals', icon: '🎯', label: 'Objectifs' },
   { href: '/nutrition', icon: '🥗', label: 'Nutrition' },
+  { href: '/planning', icon: '📅', label: 'Planning' },
+  { href: '/messages', icon: '💬', label: 'Messages' },
+  { href: '/programs', icon: '📋', label: 'Programmes' },
+  { href: '/progress', icon: '📊', label: 'Evolution' },
 ];
 
+// ── Explore (single entry) ────────────────────────────────────────────────
 const exploreNav: NavItem[] = [
   { href: '/explore', icon: '🔍', label: 'Explorer' },
-  { href: '/explore/programs', icon: '🏆', label: 'Marketplace' },
-  { href: '/messages', icon: '💬', label: 'Messages' },
-];
-
-const coachNav: NavItem[] = [
-  { href: '/coach', icon: '📊', label: 'Dashboard' },
-  { href: '/coach/agenda', icon: '📅', label: 'Agenda' },
-  { href: '/coach/clients', icon: '👥', label: 'Clients' },
-  { href: '/coach/programs', icon: '📋', label: 'Programmes' },
-  { href: '/coach/revenue', icon: '💰', label: 'Revenus' },
 ];
 
 function NavLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
   const pathname = usePathname();
-  const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+  const active =
+    item.href === '/dashboard'
+      ? pathname === '/dashboard'
+      : pathname.startsWith(item.href);
 
   return (
     <Link
@@ -49,34 +44,24 @@ function NavLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
       }`}
     >
       <span className={collapsed ? 'text-lg' : 'text-base'}>{item.icon}</span>
-      {!collapsed && <span className="truncate">{item.label}</span>}
+      {!collapsed && (
+        <span className="truncate flex-1">{item.label}</span>
+      )}
+      {!collapsed && item.badge && item.badge > 0 && (
+        <span className="text-[10px] font-bold bg-red-500 text-white rounded-full h-4 min-w-[16px] flex items-center justify-center px-1">
+          {item.badge}
+        </span>
+      )}
     </Link>
   );
 }
 
-function NavSection({
-  title,
-  items,
-  collapsed,
-}: {
-  title: string;
-  items: NavItem[];
-  collapsed: boolean;
-}) {
+function SectionLabel({ title, collapsed }: { title: string; collapsed: boolean }) {
+  if (collapsed) return <div className="mx-3 my-2 h-px bg-gray-100" />;
   return (
-    <div className="mb-1">
-      {!collapsed && title && (
-        <p className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
-          {title}
-        </p>
-      )}
-      {collapsed && title && <div className="mx-3 my-1 h-px bg-gray-100" />}
-      <div className="space-y-0.5">
-        {items.map((item) => (
-          <NavLink key={item.href + item.label} item={item} collapsed={collapsed} />
-        ))}
-      </div>
-    </div>
+    <p className="px-4 pt-3 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+      {title}
+    </p>
   );
 }
 
@@ -85,7 +70,7 @@ export function Sidebar() {
   const isCoach = userRole === 'coach' || userRole === 'both';
   const { collapsed, toggle } = useSidebar();
 
-  const { myClubs: rawMyClubs, activeClubSlug, setActiveClub, fetchMyClubs } = useClubsStore();
+  const { myClubs: rawMyClubs, activeClubSlug, fetchMyClubs } = useClubsStore();
   const myClubs = rawMyClubs || [];
 
   useEffect(() => {
@@ -93,14 +78,6 @@ export function Sidebar() {
   }, [userId, fetchMyClubs]);
 
   const activeSlug = activeClubSlug || myClubs[0]?.slug;
-
-  const clubNav: NavItem[] = activeSlug
-    ? [
-        { href: `/clubs/${activeSlug}`, icon: '🏟️', label: 'Mon club' },
-        { href: `/clubs/${activeSlug}/feed`, icon: '📰', label: 'Fil' },
-        { href: `/clubs/${activeSlug}/events`, icon: '📅', label: 'Events' },
-      ]
-    : [];
 
   return (
     <aside
@@ -122,7 +99,6 @@ export function Sidebar() {
           className={`flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition ${
             collapsed ? 'mx-auto' : ''
           }`}
-          title={collapsed ? 'Ouvrir le menu' : 'Fermer le menu'}
         >
           {collapsed ? (
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
@@ -138,15 +114,41 @@ export function Sidebar() {
 
       {/* Nav */}
       <div className="flex-1 overflow-y-auto py-2">
-        <NavSection title="" items={athleteNav} collapsed={collapsed} />
-        <NavSection title="Explorer" items={exploreNav} collapsed={collapsed} />
+        {/* Main nav */}
+        <div className="space-y-0.5">
+          {mainNav.map((item) => (
+            <NavLink key={item.href} item={item} collapsed={collapsed} />
+          ))}
+        </div>
 
-        {myClubs.length > 0 && (
-          <NavSection title="Club" items={clubNav} collapsed={collapsed} />
+        {/* Explorer */}
+        <SectionLabel title="Decouvrir" collapsed={collapsed} />
+        <div className="space-y-0.5">
+          {exploreNav.map((item) => (
+            <NavLink key={item.href} item={item} collapsed={collapsed} />
+          ))}
+        </div>
+
+        {/* Coach — dedicated view link */}
+        {isCoach && (
+          <>
+            <SectionLabel title="Coach" collapsed={collapsed} />
+            <NavLink
+              item={{ href: '/coach', icon: '🎓', label: 'Espace coach' }}
+              collapsed={collapsed}
+            />
+          </>
         )}
 
-        {isCoach && (
-          <NavSection title="Coach" items={coachNav} collapsed={collapsed} />
+        {/* Club — dedicated view link */}
+        {myClubs.length > 0 && activeSlug && (
+          <>
+            <SectionLabel title="Club" collapsed={collapsed} />
+            <NavLink
+              item={{ href: `/clubs/${activeSlug}`, icon: '🏟️', label: 'Mon club' }}
+              collapsed={collapsed}
+            />
+          </>
         )}
       </div>
 
