@@ -272,20 +272,112 @@ export default function ProgramDetailPage() {
 
   if (!program) return null;
 
+  const sportAccentColors: Record<string, string> = {
+    running: '#3b82f6', trail: '#10b981', triathlon: '#0ea5e9', crossfit: '#ef4444',
+    musculation: '#10b981', cyclisme: '#14b8a6', natation: '#0ea5e9', yoga: '#8b5cf6',
+    boxe: '#f59e0b', fitness: '#f97316', pilates: '#a78bfa', meditation: '#6366f1',
+    duathlon: '#22c55e', autre: '#64748b',
+  };
+  const accentColor = sportAccentColors[program.sport] || '#64748b';
+
+  const levelLabel: Record<string, string> = {
+    beginner: 'Débutant', intermediate: 'Intermédiaire', advanced: 'Avancé',
+  };
+
+  const totalWorkouts = program.program_workouts?.length || 0;
+  const totalDuration = program.program_workouts?.reduce((acc, w) => acc + (w.duration_minutes || 0), 0) || 0;
+
   return (
     <>
       <AppHeader title={program.title} />
-      <div className="p-4 md:p-8">
-        {/* Header */}
-        <div className="mb-6 flex flex-wrap items-center gap-3">
-          <span className="text-2xl">{SPORT_EMOJIS[program.sport as Sport] || '⚡'}</span>
-          <div className="flex-1">
-            <h2 className="text-xl font-bold text-text">{program.title}</h2>
-            <p className="text-sm text-muted">
-              {SPORT_LABELS[program.sport as Sport] || program.sport} · {program.duration_weeks} semaines · {program.level}
-            </p>
+      <div className="p-4 md:p-8 max-w-6xl mx-auto">
+
+        {/* Header card */}
+        <div
+          className="mb-4 rounded-2xl border border-border bg-white overflow-hidden"
+          style={{ borderTop: `3px solid ${accentColor}` }}
+        >
+          <div className="px-5 py-4">
+            <div className="flex items-start gap-4">
+              {/* Sport icon */}
+              <div
+                className="flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center text-3xl"
+                style={{ backgroundColor: `${accentColor}15` }}
+              >
+                {SPORT_EMOJIS[program.sport as Sport] || '⚡'}
+              </div>
+
+              {/* Title + badges */}
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl font-bold text-text leading-tight">{program.title}</h1>
+                <div className="flex flex-wrap items-center gap-2 mt-2">
+                  <span
+                    className="text-xs font-semibold px-2.5 py-0.5 rounded-full text-white"
+                    style={{ backgroundColor: accentColor }}
+                  >
+                    {SPORT_LABELS[program.sport as Sport] || program.sport}
+                  </span>
+                  <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                    {program.duration_weeks} semaines
+                  </span>
+                  {program.level && (
+                    <span className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-600">
+                      {levelLabel[program.level] || program.level}
+                    </span>
+                  )}
+                  <span
+                    className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${
+                      program.is_published
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : 'bg-amber-50 text-amber-700'
+                    }`}
+                  >
+                    {program.is_published ? '✓ Publié' : 'Brouillon'}
+                  </span>
+                </div>
+                {program.description && (
+                  <p className="text-sm text-muted mt-2">{program.description}</p>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="flex gap-2 flex-wrap">
+
+          {/* Stats row */}
+          <div className="border-t border-border px-5 py-3 flex items-center gap-6">
+            <div className="text-center">
+              <p className="text-lg font-bold text-text">{totalWorkouts}</p>
+              <p className="text-xs text-muted">séances</p>
+            </div>
+            <div className="w-px h-8 bg-border" />
+            <div className="text-center">
+              <p className="text-lg font-bold text-text">{program.duration_weeks}</p>
+              <p className="text-xs text-muted">semaines</p>
+            </div>
+            {totalDuration > 0 && (
+              <>
+                <div className="w-px h-8 bg-border" />
+                <div className="text-center">
+                  <p className="text-lg font-bold text-text">{Math.round(totalDuration / 60)}h</p>
+                  <p className="text-xs text-muted">de contenu</p>
+                </div>
+              </>
+            )}
+            {program.price !== undefined && program.price !== null && (
+              <>
+                <div className="w-px h-8 bg-border" />
+                <div className="text-center">
+                  <p className="text-lg font-bold" style={{ color: accentColor }}>
+                    {program.price === 0 ? 'Gratuit' : `${program.price}€`}
+                  </p>
+                  <p className="text-xs text-muted">prix</p>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Quick actions bar */}
+          <div className="border-t border-border px-5 py-3 flex flex-wrap items-center gap-2">
+            {/* Pro mode toggle */}
             <button
               onClick={async () => {
                 const res = await fetch(`/api/programs/${id}`, {
@@ -295,59 +387,89 @@ export default function ProgramDetailPage() {
                 });
                 if (res.ok) fetchProgram();
               }}
-              className={`text-xs px-3 py-1.5 rounded-lg border transition-colors ${
+              className={`flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border transition-colors ${
                 program.pro_mode
                   ? 'bg-violet-500 text-white border-violet-500'
-                  : 'bg-white text-gray-500 border-gray-300 hover:border-violet-400'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-violet-400 hover:text-violet-600'
               }`}
             >
-              {program.pro_mode ? '🔬 Mode Pro' : 'Mode Pro'}
+              🔬 Mode Pro
             </button>
-            <Button size="sm" variant="secondary" onClick={() => {
-              window.open(`/api/programs/${id}/calendar`, '_blank');
-            }}>
+
+            <button
+              onClick={() => setShowGenerateConfirm(true)}
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:border-brand-400 hover:text-brand-600 transition-colors"
+            >
+              🤖 Générer IA
+            </button>
+
+            <button
+              onClick={handleAutoPeriodize}
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:border-indigo-400 hover:text-indigo-600 transition-colors"
+            >
+              📊 Auto-périodiser
+            </button>
+
+            <button
+              onClick={() => window.open(`/api/programs/${id}/calendar`, '_blank')}
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:border-teal-400 hover:text-teal-600 transition-colors"
+            >
               📅 Exporter calendrier
-            </Button>
-            <Button size="sm" variant="secondary" onClick={() => setShowGenerateConfirm(true)}>
-              Générer avec l&apos;IA
-            </Button>
-            <Button size="sm" variant="secondary" onClick={handleAutoPeriodize}>
-              Auto-périodiser
-            </Button>
-            <Button size="sm" variant={program.is_published ? 'secondary' : 'primary'} onClick={() => setShowMarketplace(!showMarketplace)}>
-              {program.is_published ? '✓ Publié' : '🏪 Marketplace'}
-            </Button>
-            <Button size="sm" variant="dark" onClick={() => setShowAssign(!showAssign)}>
-              Assigner
-            </Button>
-            {!confirmDeleteProgram ? (
-              <Button size="sm" className="bg-red-500 hover:bg-red-600 text-white" onClick={() => setConfirmDeleteProgram(true)}>
-                Supprimer
-              </Button>
-            ) : (
-              <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-1.5">
-                <span className="text-xs font-medium text-red-700">Supprimer ce programme ?</span>
+            </button>
+
+            <button
+              onClick={() => setShowAssign(!showAssign)}
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:border-gray-400 transition-colors"
+            >
+              👤 Assigner athlète
+            </button>
+
+            <button
+              onClick={() => setShowMarketplace(!showMarketplace)}
+              className={`flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border transition-colors ${
+                program.is_published
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                  : 'bg-brand-500 text-white border-brand-500 hover:bg-brand-600'
+              }`}
+            >
+              🏪 {program.is_published ? 'Marketplace ✓' : 'Publier'}
+            </button>
+
+            <div className="ml-auto">
+              {!confirmDeleteProgram ? (
                 <button
-                  onClick={() => setConfirmDeleteProgram(false)}
-                  className="rounded-md bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 transition"
+                  onClick={() => setConfirmDeleteProgram(true)}
+                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-400 hover:border-red-300 hover:text-red-600 hover:bg-red-50 transition-colors"
                 >
-                  Annuler
+                  🗑️ Supprimer
                 </button>
-                <button
-                  onClick={handleDelete}
-                  className="rounded-md bg-red-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-red-700 transition"
-                >
-                  Confirmer
-                </button>
-              </div>
-            )}
+              ) : (
+                <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-1.5">
+                  <span className="text-xs font-medium text-red-700">Supprimer ce programme ?</span>
+                  <button
+                    onClick={() => setConfirmDeleteProgram(false)}
+                    className="rounded-md bg-white px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-100 transition border border-gray-200"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="rounded-md bg-red-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-red-700 transition"
+                  >
+                    Confirmer
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Assign athlete panel */}
         {showAssign && (
-          <div className="mb-6 rounded-2xl border border-border bg-white p-4">
-            <h4 className="mb-2 font-semibold text-text">Assigner un athlète</h4>
+          <div className="mb-4 rounded-2xl border border-border bg-white p-4">
+            <h4 className="mb-3 font-semibold text-text flex items-center gap-2">
+              👤 Assigner un athlète
+            </h4>
             <div className="flex gap-2">
               {loadingClients ? (
                 <p className="text-sm text-muted py-2">Chargement...</p>
@@ -374,9 +496,9 @@ export default function ProgramDetailPage() {
 
         {/* Marketplace panel */}
         {showMarketplace && (
-          <div className="mb-6 rounded-2xl border border-border bg-white p-4">
+          <div className="mb-4 rounded-2xl border border-border bg-white p-5">
             <div className="flex items-center justify-between mb-4">
-              <h4 className="font-semibold text-text">Publier sur le marketplace</h4>
+              <h4 className="font-semibold text-text">🏪 Publier sur le marketplace</h4>
               {program.is_published && (
                 <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
                   ✓ En ligne
@@ -415,26 +537,28 @@ export default function ProgramDetailPage() {
 
             {/* Preview card */}
             <div className="mb-4">
-              <p className="text-xs font-medium text-muted uppercase tracking-wide mb-2">Aperçu sur le marketplace</p>
+              <p className="text-xs font-medium text-muted uppercase tracking-wide mb-2">Aperçu marketplace</p>
               <div className="rounded-xl border border-border overflow-hidden max-w-xs">
                 <div
-                  className="h-20 flex items-end px-3 pb-2"
-                  style={{ background: `linear-gradient(135deg, var(--color-brand-500), #06b6d4)` }}
-                >
-                  <div>
-                    <p className="text-xs font-bold text-white">{program.title}</p>
-                    <p className="text-[10px] text-white/70">{program.duration_weeks} semaines</p>
+                  className="h-2"
+                  style={{ backgroundColor: accentColor }}
+                />
+                <div className="p-3 bg-white">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xl">{SPORT_EMOJIS[program.sport as Sport] || '⚡'}</span>
+                    <p className="text-sm font-bold text-text">{program.title}</p>
                   </div>
-                  <div className="ml-auto text-xs font-bold text-white">
-                    {(program.price ?? 0) === 0 ? 'Gratuit' : `${program.price}€`}
-                  </div>
-                </div>
-                <div className="p-2.5 bg-white">
+                  <p className="text-xs text-muted">{program.duration_weeks} semaines</p>
                   {program.description && (
-                    <p className="text-[11px] text-muted line-clamp-2 mb-2">{program.description}</p>
+                    <p className="text-[11px] text-muted line-clamp-2 mt-1">{program.description}</p>
                   )}
-                  <div className="rounded-lg bg-brand-500 py-1.5 text-center text-xs font-bold text-white">
-                    {(program.price ?? 0) === 0 ? "S'inscrire" : `Acheter ${program.price}€`}
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-sm font-bold" style={{ color: accentColor }}>
+                      {(program.price ?? 0) === 0 ? 'Gratuit' : `${program.price}€`}
+                    </span>
+                    <span className="text-xs text-brand-600 font-medium">
+                      {(program.price ?? 0) === 0 ? "S'inscrire" : 'Acheter'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -473,9 +597,9 @@ export default function ProgramDetailPage() {
 
         {/* AI Generate confirmation panel */}
         {showGenerateConfirm && (
-          <div className="mb-6 rounded-2xl border border-brand-200 bg-brand-50 p-4">
-            <h4 className="mb-3 font-semibold text-text">Générer le programme avec l&apos;IA</h4>
-            <p className="text-sm text-muted mb-3">
+          <div className="mb-4 rounded-2xl border border-border bg-white p-5">
+            <h4 className="mb-2 font-semibold text-text">🤖 Générer le programme avec l&apos;IA</h4>
+            <p className="text-sm text-muted mb-4">
               L&apos;IA va créer des séances pour chaque semaine en fonction de la périodisation et du sport.
             </p>
             <div className="flex gap-2 mb-4">
@@ -486,14 +610,10 @@ export default function ProgramDetailPage() {
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
                     generateLevel === level
                       ? 'bg-brand-500 text-white'
-                      : 'bg-white text-gray-600 border'
+                      : 'bg-gray-50 text-gray-600 border border-gray-200 hover:border-brand-300'
                   }`}
                 >
-                  {level === 'beginner'
-                    ? 'Débutant'
-                    : level === 'intermediate'
-                      ? 'Intermédiaire'
-                      : 'Avancé'}
+                  {level === 'beginner' ? 'Débutant' : level === 'intermediate' ? 'Intermédiaire' : 'Avancé'}
                 </button>
               ))}
             </div>
@@ -502,19 +622,16 @@ export default function ProgramDetailPage() {
                 Annuler
               </Button>
               <Button size="sm" disabled={generating} onClick={handleGenerate}>
-                {generating ? 'Génération en cours...' : 'Générer'}
+                {generating ? 'Génération...' : 'Générer les séances'}
               </Button>
             </div>
           </div>
         )}
 
-        {program.description && (
-          <p className="mb-6 text-sm text-muted">{program.description}</p>
-        )}
-
         {/* Periodization timeline */}
         {blocks.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-4 rounded-2xl border border-border bg-white p-4">
+            <h4 className="text-sm font-semibold text-text mb-3">📊 Périodisation</h4>
             <TimelineBar
               blocks={blocks}
               totalWeeks={program.duration_weeks}
