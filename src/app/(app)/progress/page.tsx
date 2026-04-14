@@ -9,8 +9,11 @@ import { StreakBadge } from '@/components/pulse/streak-badge';
 import { useAuthStore } from '@/stores/auth';
 import { SPORT_EMOJIS, SPORT_LABELS } from '@/lib/sports';
 import type { Sport } from '@/lib/sports';
+import { BodyVisualization } from '@/components/pulse/body-viz/BodyVisualization';
+import { ReadinessScore } from '@/components/pulse/body-viz/ReadinessScore';
+import { useBodyState } from '@/components/pulse/body-viz/use-body-state';
 
-type SubTab = 'summary' | 'goals' | 'nutrition';
+type SubTab = 'summary' | 'goals' | 'nutrition' | 'body';
 
 interface PersonalRecord {
   id: string;
@@ -24,7 +27,12 @@ interface PersonalRecord {
 
 export default function ProgressPage() {
   const { userId } = useAuthStore();
-  const [subTab, setSubTab] = useState<SubTab>('summary');
+  // Check URL hash for initial tab (e.g., /progress#body)
+  const [subTab, setSubTab] = useState<SubTab>(() => {
+    if (typeof window !== 'undefined' && window.location.hash === '#body') return 'body';
+    return 'summary';
+  });
+  const { bodyState, loading: bodyLoading } = useBodyState();
   const [stats, setStats] = useState<any>(null);
   const [streak, setStreak] = useState<any>(null);
   const [records, setRecords] = useState<PersonalRecord[]>([]);
@@ -51,6 +59,7 @@ export default function ProgressPage() {
 
   const tabs: { key: SubTab; label: string }[] = [
     { key: 'summary', label: 'Résumé' },
+    { key: 'body', label: 'Mon corps' },
     { key: 'goals', label: 'Objectifs' },
     { key: 'nutrition', label: 'Nutrition' },
   ];
@@ -150,6 +159,32 @@ export default function ProgressPage() {
                     <EmptyState icon="🏆" title="Pas encore de records" description="Complétez des séances pour débloquer vos records" />
                   )}
                 </div>
+              </div>
+            )}
+
+            {subTab === 'body' && (
+              <div className="space-y-4">
+                {bodyLoading ? (
+                  <div className="space-y-4">
+                    <div className="h-[400px] animate-pulse rounded-2xl bg-surface" />
+                    <div className="h-32 animate-pulse rounded-2xl bg-surface" />
+                  </div>
+                ) : bodyState ? (
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex-1">
+                      <BodyVisualization bodyState={bodyState} />
+                    </div>
+                    <div className="md:w-72 shrink-0">
+                      <ReadinessScore bodyState={bodyState} />
+                    </div>
+                  </div>
+                ) : (
+                  <EmptyState
+                    icon="🫀"
+                    title="Pas encore de données"
+                    description="Complétez des séances pour visualiser l'état de votre corps"
+                  />
+                )}
               </div>
             )}
 

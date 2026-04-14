@@ -13,6 +13,8 @@ import { SPORT_EMOJIS } from '@/lib/sports';
 import type { Sport } from '@/lib/sports';
 import Link from 'next/link';
 import { WorkoutSuggestionCard } from '@/components/pulse/workout-suggestion';
+import { ReadinessScore } from '@/components/pulse/body-viz/ReadinessScore';
+import { useBodyState } from '@/components/pulse/body-viz/use-body-state';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -88,6 +90,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showChecklist, setShowChecklist] = useState(true);
+  const { bodyState: dashBodyState } = useBodyState();
 
   // Redirect to onboarding only for brand new users (no profile data + no flag)
   useEffect(() => {
@@ -235,6 +238,15 @@ export default function DashboardPage() {
             <p className="text-sm font-bold text-text mt-1">{goalLabel}</p>
           </div>
         </div>
+
+        {/* Readiness score */}
+        {dashBodyState && (
+          <ReadinessScore
+            bodyState={dashBodyState}
+            compact
+            onClick={() => router.push('/progress#body')}
+          />
+        )}
 
         {/* Onboarding checklist (new users) */}
         {showChecklist && !allChecklistDone && (
