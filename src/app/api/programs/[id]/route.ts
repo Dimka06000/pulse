@@ -11,7 +11,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
   try {
     const { data: program, error } = await supabase
       .from('training_programs')
-      .select('*, coach_profiles(display_name, avatar_url), program_workouts(*)')
+      .select('*, coach_profiles(display_name), program_workouts(*)')
       .eq('id', id)
       .single();
 

@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams;
 
   try {
-    let query = supabase.from('training_programs').select('*, coach_profiles(display_name, avatar_url)');
+    let query = supabase.from('training_programs').select('*, coach_profiles(display_name)');
 
     let coachId = params.get('coach_id');
     const published = params.get('published');
