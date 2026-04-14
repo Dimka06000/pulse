@@ -109,6 +109,38 @@ export function ProgramWizardModal({
   const [calibrating, setCalibrating] = useState(false);
   const [calibrationError, setCalibrationError] = useState<string | null>(null);
 
+  // Event autocomplete
+  type EventSuggestion = {
+    name: string; sport: string; distanceKm: number | null;
+    terrainType: string | null; location: string; date: string | null;
+    elevationM?: number | null; source: string;
+  };
+  const [eventSuggestions, setEventSuggestions] = useState<EventSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [searchingEvents, setSearchingEvents] = useState(false);
+
+  useEffect(() => {
+    if (!form.eventName || form.eventName.length < 2) {
+      setEventSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setSearchingEvents(true);
+      try {
+        const params = new URLSearchParams({ q: form.eventName });
+        if (form.sport) params.set('sport', form.sport);
+        const res = await fetch(`/api/events/search?${params}`);
+        if (res.ok) {
+          const data = await res.json();
+          setEventSuggestions(data);
+          setShowSuggestions(data.length > 0);
+        }
+      } catch { /* ignore */ }
+      setSearchingEvents(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [form.eventName, form.sport]);
+
   const isEdit = !!editProgram;
   const effectiveAthleteId = form.athleteId || externalAthleteId || '';
 
@@ -379,12 +411,49 @@ export function ProgramWizardModal({
 
               {form.hasTargetEvent && (
                 <div className="space-y-4 pl-0.5">
-                  <Input
-                    label="Nom de l'événement"
-                    placeholder="Ex: Marathon de Paris, UTMB, Spartan Race..."
-                    value={form.eventName}
-                    onChange={(e) => updateForm({ eventName: e.target.value })}
-                  />
+                  <div className="relative">
+                    <Input
+                      label="Nom de l'événement"
+                      placeholder="Ex: Marathon de Paris, UTMB, Spartan Race..."
+                      value={form.eventName}
+                      onChange={(e) => {
+                        updateForm({ eventName: e.target.value });
+                        setShowSuggestions(true);
+                      }}
+                      onFocus={() => eventSuggestions.length > 0 && setShowSuggestions(true)}
+                      autoComplete="off"
+                    />
+                    {searchingEvents && (
+                      <div className="absolute right-3 top-9 text-xs text-gray-400">Recherche...</div>
+                    )}
+                    {showSuggestions && eventSuggestions.length > 0 && (
+                      <div className="absolute z-50 mt-1 w-full rounded-xl border border-gray-200 bg-white shadow-lg max-h-64 overflow-y-auto">
+                        {eventSuggestions.map((ev, i) => (
+                          <button
+                            key={`${ev.name}-${i}`}
+                            type="button"
+                            className="w-full text-left px-4 py-3 hover:bg-brand-50 transition-colors border-b border-gray-50 last:border-0"
+                            onClick={() => {
+                              updateForm({
+                                eventName: ev.name,
+                                eventDate: ev.date || form.eventDate,
+                                eventDistanceKm: ev.distanceKm ?? form.eventDistanceKm,
+                                eventTerrainType: (ev.terrainType as 'road' | 'trail' | 'mixed') || form.eventTerrainType,
+                              });
+                              setShowSuggestions(false);
+                            }}
+                          >
+                            <div className="font-medium text-sm text-gray-900">{ev.name}</div>
+                            <div className="text-xs text-gray-500 mt-0.5 flex gap-2">
+                              {ev.location && <span>📍 {ev.location}</span>}
+                              {ev.distanceKm && <span>📏 {ev.distanceKm} km</span>}
+                              {ev.date && <span>📅 {new Date(ev.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}</span>}
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   <Input
                     label="Date de l'événement"
