@@ -110,6 +110,30 @@ const SPORT_PRESETS: Record<string, Array<{ label: string; duration: number; exe
   ],
 };
 
+// ── Smart date/time helpers ─────────────────────────────────────────────────
+
+const DAY_NAMES_SHORT = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+const MONTH_NAMES = ['jan', 'fev', 'mar', 'avr', 'mai', 'juin', 'juil', 'aout', 'sept', 'oct', 'nov', 'dec'];
+
+function getNextDays(count: number) {
+  const days = [];
+  const now = new Date();
+  for (let i = 0; i < count; i++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() + i);
+    const label = i === 0 ? "Aujourd'hui" : i === 1 ? 'Demain' : `${DAY_NAMES_SHORT[d.getDay()]} ${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`;
+    days.push({ date: d, label, value: d.toISOString().split('T')[0] });
+  }
+  return days;
+}
+
+type TimePeriod = 'matin' | 'midi' | 'soir';
+const TIME_PERIODS: Array<{ key: TimePeriod; label: string; emoji: string; slots: string[] }> = [
+  { key: 'matin', label: 'Matin', emoji: '🌅', slots: ['06:00', '06:30', '07:00', '07:30', '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00'] },
+  { key: 'midi', label: 'Midi', emoji: '☀️', slots: ['11:30', '12:00', '12:30', '13:00', '13:30', '14:00'] },
+  { key: 'soir', label: 'Soir', emoji: '🌙', slots: ['17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00', '20:30', '21:00'] },
+];
+
 const QUICK_EXERCISES: Record<string, string[]> = {
   musculation: ['Squat', 'Developpe couche', 'Tractions', 'Curl biceps', 'Dips', 'Fentes', 'Gainage planche'],
   crossfit: ['Burpees', 'Box jumps', 'Thrusters', 'Wall balls', 'Toes to bar', 'Clean & jerk'],
@@ -136,8 +160,13 @@ function CreateSessionModal({ open, onClose, onCreated, defaultDate }: CreateSes
   const [scheduledAt, setScheduledAt] = useState(defaultDate || '');
   const [notes, setNotes] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
+  const [selectedDay, setSelectedDay] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedTime, setSelectedTime] = useState('');
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>('matin');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const nextDays = getNextDays(10);
 
   if (!open) return null;
 
@@ -150,12 +179,11 @@ function CreateSessionModal({ open, onClose, onCreated, defaultDate }: CreateSes
     setExercises([]);
     setTitle('');
     setStep('config');
-    // Set default time to now + 1h rounded
-    if (!scheduledAt) {
-      const d = new Date();
-      d.setHours(d.getHours() + 1, 0, 0, 0);
-      setScheduledAt(d.toISOString().slice(0, 16));
-    }
+    // Auto-detect best time period based on current hour
+    const hour = new Date().getHours();
+    if (hour < 11) { setTimePeriod('matin'); setSelectedTime('07:00'); }
+    else if (hour < 15) { setTimePeriod('midi'); setSelectedTime('12:00'); }
+    else { setTimePeriod('soir'); setSelectedTime('18:00'); }
   };
 
   const selectPreset = (preset: typeof presets[0]) => {
@@ -181,6 +209,9 @@ function CreateSessionModal({ open, onClose, onCreated, defaultDate }: CreateSes
     setTitle('');
     setDuration('60');
     setScheduledAt(defaultDate || '');
+    setSelectedDay(new Date().toISOString().split('T')[0]);
+    setSelectedTime('');
+    setTimePeriod('matin');
     setNotes('');
     setExercises([]);
     setStep('sport');
@@ -189,10 +220,12 @@ function CreateSessionModal({ open, onClose, onCreated, defaultDate }: CreateSes
 
   const handleSubmit = async () => {
     setError('');
-    if (!sport || !duration || !scheduledAt) {
-      setError('Remplissez sport, duree et date');
+    if (!sport || !duration || !selectedDay || !selectedTime) {
+      setError('Choisissez un jour et un creneau');
       return;
     }
+
+    const scheduledDate = `${selectedDay}T${selectedTime}:00`;
 
     setLoading(true);
     try {
@@ -203,7 +236,7 @@ function CreateSessionModal({ open, onClose, onCreated, defaultDate }: CreateSes
           sport,
           title: title || `${SPORT_LABELS[sport as Sport]} solo`,
           duration_minutes: parseInt(duration, 10),
-          scheduled_at: new Date(scheduledAt).toISOString(),
+          scheduled_at: new Date(scheduledDate).toISOString(),
           notes,
           metrics: exercises.length > 0 ? { exercises } : undefined,
         }),
@@ -315,34 +348,95 @@ function CreateSessionModal({ open, onClose, onCreated, defaultDate }: CreateSes
                 </div>
               )}
 
-              {/* Date & duration */}
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  label="Quand"
-                  required
-                  type="datetime-local"
-                  value={scheduledAt}
-                  onChange={(e) => setScheduledAt(e.target.value)}
-                />
-                <div>
-                  <label className="text-sm font-medium text-gray-700 mb-1.5 block">Duree</label>
-                  <div className="flex gap-1.5">
-                    {[30, 45, 60, 90].map((d) => (
+              {/* ── QUAND ? — Day picker ────────────────────────────────── */}
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Quel jour ?</p>
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                  {nextDays.map((d) => {
+                    const isActive = selectedDay === d.value;
+                    return (
                       <button
-                        key={d}
+                        key={d.value}
                         type="button"
-                        onClick={() => setDuration(String(d))}
-                        className={`flex-1 rounded-lg py-2 text-xs font-semibold transition ${
-                          duration === String(d)
-                            ? 'text-white'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        onClick={() => setSelectedDay(d.value)}
+                        className={`flex-shrink-0 rounded-xl px-3 py-2 text-center transition-all border min-w-[72px] ${
+                          isActive
+                            ? 'border-transparent text-white shadow-sm'
+                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
                         }`}
-                        style={duration === String(d) ? { background: accent } : {}}
+                        style={isActive ? { background: accent } : {}}
                       >
-                        {d}&apos;
+                        <span className="text-[11px] font-semibold block leading-tight">{d.label}</span>
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ── QUELLE HEURE ? — Period tabs + time grid ──────────── */}
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">A quelle heure ?</p>
+                {/* Period tabs */}
+                <div className="flex gap-1.5 mb-3">
+                  {TIME_PERIODS.map((p) => (
+                    <button
+                      key={p.key}
+                      type="button"
+                      onClick={() => setTimePeriod(p.key)}
+                      className={`flex-1 rounded-lg py-2 text-xs font-semibold transition border ${
+                        timePeriod === p.key
+                          ? 'border-transparent text-white'
+                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                      }`}
+                      style={timePeriod === p.key ? { background: accent } : {}}
+                    >
+                      {p.emoji} {p.label}
+                    </button>
+                  ))}
+                </div>
+                {/* Time slots grid */}
+                <div className="flex flex-wrap gap-1.5">
+                  {TIME_PERIODS.find(p => p.key === timePeriod)?.slots.map((slot) => {
+                    const isActive = selectedTime === slot;
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => setSelectedTime(slot)}
+                        className={`rounded-lg px-3 py-2 text-xs font-mono font-semibold transition border ${
+                          isActive
+                            ? 'border-transparent text-white shadow-sm'
+                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                        }`}
+                        style={isActive ? { background: accent } : {}}
+                      >
+                        {slot}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* ── COMBIEN DE TEMPS ? — Duration pills ──────────────── */}
+              <div>
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Combien de temps ?</p>
+                <div className="flex gap-2">
+                  {[20, 30, 45, 60, 90, 120].map((d) => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setDuration(String(d))}
+                      className={`flex-1 rounded-xl py-2.5 text-center transition border ${
+                        duration === String(d)
+                          ? 'border-transparent text-white shadow-sm'
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                      }`}
+                      style={duration === String(d) ? { background: accent } : {}}
+                    >
+                      <span className="text-sm font-bold block">{d >= 60 ? `${d / 60}h` : d}</span>
+                      {d < 60 && <span className="text-[10px] opacity-70">min</span>}
+                    </button>
+                  ))}
                 </div>
               </div>
 
