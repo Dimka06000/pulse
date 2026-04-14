@@ -151,39 +151,48 @@ export async function GET() {
     .slice(0, 5);
 
   // Today's program workout (for workout player)
+  // Match by week_number + day_number relative to enrollment start date
   let todayWorkout: any = null;
   try {
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
-    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
-
-    // Find program workouts scheduled today for programs the user is enrolled in
     const { data: enrollments } = await db
       .from('program_enrollments')
-      .select('program_id')
+      .select('program_id, started_at')
       .eq('athlete_id', user.id)
       .eq('status', 'active');
 
     if (enrollments && enrollments.length > 0) {
-      const programIds = enrollments.map((e: any) => e.program_id);
-      const { data: todayPW } = await db
-        .from('program_workouts')
-        .select('id, title, week_number, day_number, workout_data, training_programs(title)')
-        .in('program_id', programIds)
-        .gte('scheduled_date', todayStart.split('T')[0])
-        .lte('scheduled_date', todayEnd.split('T')[0])
-        .neq('status', 'completed')
-        .limit(1)
-        .maybeSingle();
+      const todayDayOfWeek = now.getDay() === 0 ? 7 : now.getDay(); // 1=Mon...7=Sun
 
-      if (todayPW) {
-        const wd = (todayPW.workout_data as any) || { exercises: [] };
-        const hasExercises = wd.exercises && wd.exercises.length > 0;
-        todayWorkout = {
-          id: todayPW.id,
-          title: todayPW.title || (todayPW.training_programs as any)?.title || 'Seance du jour',
-          hasExercises,
-          exerciseCount: hasExercises ? wd.exercises.length : 0,
-        };
+      for (const enroll of enrollments) {
+        // Calculate current week based on enrollment start
+        const started = enroll.started_at ? new Date(enroll.started_at) : now;
+        const daysSinceStart = Math.floor((now.getTime() - started.getTime()) / 86400000);
+        const currentWeek = Math.floor(daysSinceStart / 7) + 1;
+
+        const { data: todayPW } = await db
+          .from('program_workouts')
+          .select('id, title, week_number, day_number, workout_data, duration_minutes, training_programs(title, sport)')
+          .eq('program_id', enroll.program_id)
+          .eq('week_number', currentWeek)
+          .eq('day_number', todayDayOfWeek)
+          .limit(1)
+          .maybeSingle();
+
+        if (todayPW) {
+          const raw = todayPW.workout_data;
+          const wd = typeof raw === 'string' ? JSON.parse(raw) : (raw || { exercises: [] });
+          const exercises = wd.exercises || [];
+          todayWorkout = {
+            id: todayPW.id,
+            title: todayPW.title || (todayPW.training_programs as any)?.title || 'Seance du jour',
+            programTitle: (todayPW.training_programs as any)?.title || null,
+            sport: (todayPW.training_programs as any)?.sport || null,
+            hasExercises: exercises.length > 0,
+            exerciseCount: exercises.length,
+            duration: todayPW.duration_minutes || null,
+          };
+          break; // Found one, stop
+        }
       }
     }
   } catch {
