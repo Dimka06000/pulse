@@ -3,28 +3,25 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { AppHeader } from '@/components/pulse/app-header';
-import { StatCard } from '@/components/pulse/stat-card';
-import { Button } from '@/components/pulse/button';
-import { ActivityRings } from '@/components/pulse/activity-rings';
 import { StreakBadge } from '@/components/pulse/streak-badge';
 import { CreateSessionModal } from '@/components/pulse/create-session-modal';
+import { WorkoutSuggestionCard } from '@/components/pulse/workout-suggestion';
+import { ReadinessScore } from '@/components/pulse/body-viz/ReadinessScore';
+import { useBodyState } from '@/components/pulse/body-viz/use-body-state';
 import { useAuthStore } from '@/stores/auth';
 import { SPORT_EMOJIS } from '@/lib/sports';
 import type { Sport } from '@/lib/sports';
 import Link from 'next/link';
-import { WorkoutSuggestionCard } from '@/components/pulse/workout-suggestion';
-import { ReadinessScore } from '@/components/pulse/body-viz/ReadinessScore';
-import { useBodyState } from '@/components/pulse/body-viz/use-body-state';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-// Onboarding checklist items
+// ── Onboarding checklist ──────────────────────────────────────────────────────
+
 interface ChecklistItem {
   id: string;
   label: string;
   done: boolean;
   href?: string;
-  action?: () => void;
 }
 
 function OnboardingChecklist({ items, onDismiss }: { items: ChecklistItem[]; onDismiss: () => void }) {
@@ -39,34 +36,29 @@ function OnboardingChecklist({ items, onDismiss }: { items: ChecklistItem[]; onD
           Masquer
         </button>
       </div>
-
-      {/* Progress bar */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-1">
           <p className="text-xs text-muted">{doneCount}/{items.length} termine</p>
           <p className="text-xs font-semibold text-brand-500">{progress}%</p>
         </div>
-        <div className="h-2 rounded-full bg-surface overflow-hidden">
+        <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-brand-500 to-cyan-500 transition-all duration-500"
+            className="h-full rounded-full bg-brand-500 transition-all duration-500"
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
-
       <div className="space-y-2">
         {items.map(item => (
           <Link
             key={item.id}
             href={item.href || '#'}
             className={`flex items-center gap-3 rounded-xl p-3 transition ${
-              item.done ? 'bg-green-50' : 'bg-surface hover:bg-surface/80'
+              item.done ? 'bg-green-50' : 'bg-gray-50 hover:bg-gray-100'
             }`}
           >
-            <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-xs ${
-              item.done
-                ? 'border-green-500 bg-green-500 text-white'
-                : 'border-gray-300'
+            <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 text-[10px] ${
+              item.done ? 'border-green-500 bg-green-500 text-white' : 'border-gray-300'
             }`}>
               {item.done && '✓'}
             </span>
@@ -81,36 +73,44 @@ function OnboardingChecklist({ items, onDismiss }: { items: ChecklistItem[]; onD
   );
 }
 
+// ── Motivational tagline based on readiness ───────────────────────────────────
+
+function getMotivationalLine(readiness: number | null): string {
+  if (readiness === null) return 'Pret pour une nouvelle journee ?';
+  if (readiness >= 80) return 'Vous etes en pleine forme — allez-y a fond !';
+  if (readiness >= 60) return 'Bonne forme — une seance moderee sera parfaite.';
+  if (readiness >= 40) return 'Recuperation conseilee — privilegiez le leger.';
+  return 'Votre corps a besoin de repos aujourd\'hui.';
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
 export default function DashboardPage() {
   const router = useRouter();
   const { userId } = useAuthStore();
   const [stats, setStats] = useState<any>(null);
   const [streak, setStreak] = useState<any>(null);
-  const [soloSessions, setSoloSessions] = useState<any[]>([]);
+  const [upcomingSessions, setUpcomingSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [showChecklist, setShowChecklist] = useState(true);
   const { bodyState: dashBodyState } = useBodyState();
 
-  // Redirect to onboarding only for brand new users (no profile data + no flag)
+  // Onboarding redirect for brand-new users
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (localStorage.getItem('pulse_onboarded')) return;
     if (userId) {
       fetch('/api/profile').then(r => r.ok ? r.json() : null).then(data => {
-        // Only redirect if profile has no name set (truly new user)
         if (data && !data.first_name) {
           router.push('/onboarding');
         } else {
           localStorage.setItem('pulse_onboarded', 'true');
         }
-      }).catch(() => {
-        localStorage.setItem('pulse_onboarded', 'true');
-      });
+      }).catch(() => { localStorage.setItem('pulse_onboarded', 'true'); });
     }
   }, [router, userId]);
 
-  // Check if user dismissed the checklist
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setShowChecklist(!localStorage.getItem('pulse_checklist_dismissed'));
@@ -120,7 +120,6 @@ export default function DashboardPage() {
   const fetchData = useCallback(() => {
     if (!userId) return;
     setLoading(true);
-
     Promise.all([
       fetch('/api/dashboard/stats').then(r => r.ok ? r.json() : null),
       fetch('/api/streaks').then(r => r.ok ? r.json() : null).catch(() => null),
@@ -129,7 +128,7 @@ export default function DashboardPage() {
       .then(([s, st, solo]) => {
         setStats(s);
         setStreak(st);
-        setSoloSessions(Array.isArray(solo) ? solo.slice(0, 3) : []);
+        setUpcomingSessions(Array.isArray(solo) ? solo : []);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -137,55 +136,85 @@ export default function DashboardPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // ── Loading skeleton ────────────────────────────────────────────────────────
+
   if (loading) {
     return (
       <>
-        <AppHeader greeting="Bonjour 👋" title="Votre semaine" />
-        <div className="p-4 md:p-8 space-y-4">
-          {/* Skeleton: greeting */}
-          <div className="h-8 w-48 animate-pulse rounded-2xl bg-surface" />
-          {/* Skeleton: KPI cards */}
-          <div className="grid grid-cols-2 gap-3">
-            {[1, 2, 3, 4].map(i => <div key={i} className="h-24 animate-pulse rounded-2xl bg-surface" />)}
+        <AppHeader title="Tableau de bord" />
+        <div className="p-4 md:p-8 space-y-5 max-w-2xl mx-auto">
+          <div className="h-16 w-64 animate-pulse rounded-2xl bg-gray-100" />
+          <div className="flex gap-3 overflow-hidden">
+            {[1,2,3,4].map(i => <div key={i} className="h-24 w-32 shrink-0 animate-pulse rounded-2xl bg-gray-100" />)}
           </div>
-          {/* Skeleton: content blocks */}
-          {[1, 2, 3].map(i => <div key={i} className="h-32 animate-pulse rounded-2xl bg-surface" />)}
+          {[1,2,3].map(i => <div key={i} className="h-28 animate-pulse rounded-2xl bg-gray-100" />)}
         </div>
       </>
     );
   }
 
-  const s = stats || { firstName: null, sessionsThisWeek: 0, sessionsThisMonth: 0, totalTimeMinutes: 0, activeGoals: 0, nextSession: null, recentActivity: [], stravaConnected: false };
+  // ── Data normalization ──────────────────────────────────────────────────────
+
+  const s = stats || {
+    firstName: null,
+    sessionsThisWeek: 0,
+    sessionsThisMonth: 0,
+    totalTimeMinutes: 0,
+    activeGoals: 0,
+    nextSession: null,
+    recentActivity: [],
+    stravaConnected: false,
+  };
+
+  const st = streak || { current_streak: 0, longest_streak: 0, total_activities: 0 };
   const hours = Math.floor(s.totalTimeMinutes / 60);
   const mins = s.totalTimeMinutes % 60;
-  const st = streak || { current_streak: 0, longest_streak: 0, total_activities: 0 };
+  const readiness = dashBodyState?.readinessScore ?? null;
 
-  // Greeting with first name
-  const greeting = s.firstName ? `Bonjour ${s.firstName} 👋` : 'Bonjour 👋';
+  // Current date French
+  const today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const todayCapitalized = today.charAt(0).toUpperCase() + today.slice(1);
 
-  // Merge solo sessions into recent activity
-  const soloRecent = soloSessions.map((ss: any) => ({
-    title: ss.title || 'Seance solo',
-    sport: ss.sport,
-    emoji: SPORT_EMOJIS[ss.sport as Sport] || '⚡',
-    duration: ss.duration_minutes,
-    date: new Date(ss.scheduled_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
-    source: 'solo',
-  }));
-  const allRecent = [...(s.recentActivity || []), ...soloRecent].slice(0, 5);
+  // Recent activity merged
+  const soloRecent = upcomingSessions
+    .filter((ss: any) => {
+      const d = new Date(ss.scheduled_at);
+      return d < new Date();
+    })
+    .map((ss: any) => ({
+      title: ss.title || 'Seance solo',
+      sport: ss.sport,
+      emoji: SPORT_EMOJIS[ss.sport as Sport] || '⚡',
+      duration: ss.duration_minutes,
+      date: new Date(ss.scheduled_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }),
+      source: 'solo',
+    }));
 
-  // Activity rings data (weekly approximation)
-  const weekSessions = Math.min(s.sessionsThisMonth, 7);
-  const weekMinutes = Math.min(s.totalTimeMinutes, 420);
+  const recentActivity = [...(s.recentActivity || []), ...soloRecent].slice(0, 4);
 
-  // Onboarding checklist items
+  // Upcoming sessions (future)
+  const futureSessionsList = upcomingSessions
+    .filter((ss: any) => new Date(ss.scheduled_at) >= new Date())
+    .slice(0, 4)
+    .map((ss: any) => ({
+      title: ss.title || 'Seance solo',
+      sport: ss.sport,
+      emoji: SPORT_EMOJIS[ss.sport as Sport] || '⚡',
+      duration: ss.duration_minutes,
+      date: new Date(ss.scheduled_at).toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' }),
+      source: 'solo',
+    }));
+
+  // Next session from API or solo
+  const nextSession = s.nextSession;
+
+  // Onboarding checklist
   const checklistItems: ChecklistItem[] = [
     { id: 'strava', label: 'Connecter Strava', done: !!s.stravaConnected, href: '/profile/connections' },
     { id: 'goal', label: 'Definir un objectif', done: s.activeGoals > 0, href: '/goals' },
-    { id: 'session', label: 'Planifier une seance', done: s.sessionsThisMonth > 0 || soloSessions.length > 0 },
+    { id: 'session', label: 'Planifier une seance', done: s.sessionsThisMonth > 0 || upcomingSessions.length > 0 },
     { id: 'journal', label: 'Remplir le journal', done: false, href: '/journal' },
   ];
-
   const allChecklistDone = checklistItems.every(i => i.done);
 
   const handleDismissChecklist = () => {
@@ -193,146 +222,233 @@ export default function DashboardPage() {
     localStorage.setItem('pulse_checklist_dismissed', 'true');
   };
 
-  // Format next session date for KPI card
-  const nextRdvLabel = s.nextSession
-    ? new Date(s.nextSession.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) || s.nextSession.date
-    : '—';
-
-  // Current goal label
-  const goalLabel = s.activeGoals > 0 ? `${s.activeGoals} en cours` : '—';
+  // Sport color for accent (default to brand)
+  const accentColor = '#6366f1'; // brand indigo
 
   return (
     <>
-      <AppHeader greeting={greeting} title="Votre semaine" />
-      <div className="p-4 md:p-8 space-y-6">
-        {/* Desktop title + streak */}
-        <div className="hidden md:flex items-center justify-between">
-          <h1 className="text-2xl font-extrabold text-text">{greeting}</h1>
-          <StreakBadge current={st.current_streak} longest={st.longest_streak} />
-        </div>
+      <AppHeader title="Tableau de bord" />
 
-        {/* Mobile greeting (visible) + streak */}
-        <div className="flex md:hidden items-center justify-between">
-          <h2 className="text-lg font-bold text-text">{greeting}</h2>
-          <StreakBadge current={st.current_streak} longest={st.longest_streak} />
-        </div>
+      <div className="p-4 md:p-8 space-y-5 max-w-2xl mx-auto pb-24">
 
-        {/* 4 KPI cards */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
-            <p className="text-xs text-muted">Seances cette semaine</p>
-            <p className="font-mono text-2xl font-extrabold text-text">{s.sessionsThisWeek}</p>
+        {/* ── GREETING SECTION ── */}
+        <div className="pt-1">
+          <div className="flex items-start justify-between">
+            <div>
+              <h1 className="text-2xl font-extrabold text-gray-900">
+                Bonjour{s.firstName ? `, ${s.firstName}` : ''} 👋
+              </h1>
+              <p className="text-sm text-gray-400 mt-0.5">{todayCapitalized}</p>
+              <p className="text-sm text-gray-500 mt-1">{getMotivationalLine(readiness)}</p>
+            </div>
+            {(st.current_streak > 0 || st.longest_streak > 0) && (
+              <StreakBadge current={st.current_streak} longest={st.longest_streak} />
+            )}
           </div>
-          <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
-            <p className="text-xs text-muted">Streak actuel</p>
-            <p className="font-mono text-2xl font-extrabold text-text">
-              {st.current_streak} <span className="text-sm font-normal text-muted">jours</span>
+        </div>
+
+        {/* ── STATS ROW — horizontal scroll on mobile ── */}
+        <div className="flex gap-3 overflow-x-auto pb-1 -mx-4 px-4 snap-x snap-mandatory scrollbar-none">
+          {/* Seances ce mois */}
+          <div className="shrink-0 snap-start w-32 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <p className="text-[11px] text-gray-400 font-medium leading-tight">Seances ce mois</p>
+            <p className="font-mono text-3xl font-extrabold text-gray-900 mt-1">{s.sessionsThisMonth}</p>
+          </div>
+
+          {/* Heures */}
+          <div className="shrink-0 snap-start w-32 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <p className="text-[11px] text-gray-400 font-medium leading-tight">Heures d'entrainement</p>
+            <p className="font-mono text-3xl font-extrabold text-gray-900 mt-1">
+              {hours}<span className="text-base font-semibold text-gray-400">h{mins > 0 ? mins : ''}</span>
             </p>
           </div>
-          <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
-            <p className="text-xs text-muted">Prochain RDV</p>
-            <p className="text-sm font-bold text-text mt-1">{nextRdvLabel}</p>
+
+          {/* Objectifs */}
+          <div className="shrink-0 snap-start w-32 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <p className="text-[11px] text-gray-400 font-medium leading-tight">Objectifs actifs</p>
+            <p className="font-mono text-3xl font-extrabold text-gray-900 mt-1">{s.activeGoals}</p>
           </div>
-          <div className="rounded-2xl border border-border bg-white p-4 shadow-sm">
-            <p className="text-xs text-muted">Objectif en cours</p>
-            <p className="text-sm font-bold text-text mt-1">{goalLabel}</p>
+
+          {/* Readiness — only if body state available */}
+          {dashBodyState && (
+            <div
+              className="shrink-0 snap-start w-36 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => router.push('/progress#body')}
+            >
+              <p className="text-[11px] text-gray-400 font-medium leading-tight">Readiness</p>
+              <div className="flex items-end gap-1 mt-1">
+                <p
+                  className="font-mono text-3xl font-extrabold"
+                  style={{
+                    color: dashBodyState.readinessScore >= 70 ? '#22c55e'
+                      : dashBodyState.readinessScore >= 40 ? '#f59e0b'
+                      : '#ef4444'
+                  }}
+                >
+                  {dashBodyState.readinessScore}
+                </p>
+                <p className="text-sm text-gray-400 mb-1">/100</p>
+              </div>
+            </div>
+          )}
+
+          {/* Streak */}
+          <div className="shrink-0 snap-start w-32 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+            <p className="text-[11px] text-gray-400 font-medium leading-tight">Streak actuel</p>
+            <p className="font-mono text-3xl font-extrabold text-gray-900 mt-1">
+              {st.current_streak}<span className="text-base font-semibold text-gray-400">j</span>
+            </p>
           </div>
         </div>
 
-        {/* Readiness score */}
-        {dashBodyState && (
-          <ReadinessScore
-            bodyState={dashBodyState}
-            compact
-            onClick={() => router.push('/progress#body')}
-          />
-        )}
-
-        {/* Onboarding checklist (new users) */}
-        {showChecklist && !allChecklistDone && (
-          <OnboardingChecklist items={checklistItems} onDismiss={handleDismissChecklist} />
-        )}
-
-        {/* Next session */}
-        {s.nextSession ? (
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-5 text-white">
-            <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-brand-500/15" />
-            <p className="text-[11px] uppercase tracking-widest opacity-50">Prochaine seance</p>
-            <p className="mt-1 text-lg font-bold">{s.nextSession.title}</p>
-            <p className="text-sm opacity-60">{s.nextSession.date} · {s.nextSession.coachName || 'Solo'}</p>
-            <div className="mt-3 flex gap-2">
-              {s.nextSession.sport && (
-                <span className="rounded-md bg-white/10 px-2 py-1 text-xs">{s.nextSession.sport}</span>
-              )}
-              <span className="rounded-md bg-white/10 px-2 py-1 text-xs">⏱ {s.nextSession.duration} min</span>
+        {/* ── ENTRAINEMENT DU JOUR ── */}
+        {nextSession ? (
+          <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
+            {/* sport accent bar */}
+            <div className="h-1 w-full" style={{ background: accentColor }} />
+            <div className="p-5">
+              <p className="text-[11px] uppercase tracking-widest text-gray-400 font-semibold">Entrainement du jour</p>
+              <h2 className="text-lg font-bold text-gray-900 mt-1">{nextSession.title}</h2>
+              <div className="flex items-center gap-3 mt-2">
+                {nextSession.sport && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+                    {SPORT_EMOJIS[nextSession.sport as Sport] || '⚡'} {nextSession.sport}
+                  </span>
+                )}
+                {nextSession.duration && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+                    ⏱ {nextSession.duration} min
+                  </span>
+                )}
+                {nextSession.coachName && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+                    👤 {nextSession.coachName}
+                  </span>
+                )}
+              </div>
+              <div className="mt-4">
+                <button
+                  className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                  style={{ background: accentColor }}
+                  onClick={() => setShowModal(true)}
+                >
+                  Commencer
+                </button>
+              </div>
             </div>
           </div>
         ) : (
-          <div className="rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 p-5 text-white text-center">
-            <p className="text-sm opacity-60">Aucune seance prevue</p>
-            <Button variant="primary" size="sm" className="mt-3" onClick={() => setShowModal(true)}>
-              Planifier une seance
-            </Button>
+          <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-5 text-center">
+            <p className="text-2xl mb-2">😴</p>
+            <p className="text-sm font-semibold text-gray-700">Jour de repos</p>
+            <p className="text-xs text-gray-400 mt-0.5 mb-4">Aucune seance prevue aujourd'hui</p>
+            <button
+              onClick={() => setShowModal(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition"
+            >
+              + Planifier une seance
+            </button>
           </div>
         )}
 
-        {/* Activity Rings + Stats */}
-        <div className="flex flex-col sm:flex-row items-center gap-6">
-          <ActivityRings
-            move={weekMinutes}
-            moveGoal={300}
-            exercise={weekSessions}
-            exerciseGoal={5}
-            stand={st.total_activities}
-            standGoal={Math.max(st.total_activities, 20)}
-            size={140}
-          />
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 flex-1 w-full">
-            <StatCard variant="gradient" label="Seances" value={s.sessionsThisMonth} />
-            <StatCard variant="white" label="Temps total" value={`${hours}h${mins > 0 ? mins : ''}`} />
-            <StatCard variant="ring" label="Objectifs" percent={s.activeGoals > 0 ? 65 : 0} subtitle={s.activeGoals > 0 ? `${s.activeGoals} en cours` : 'Aucun'} />
+        {/* ── PROCHAINES SEANCES ── */}
+        {futureSessionsList.length > 0 && (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-bold text-gray-900">Prochaines seances</h2>
+              <Link href="/planning" className="text-xs text-indigo-500 font-medium hover:underline">
+                Voir tout →
+              </Link>
+            </div>
+            <div className="space-y-2">
+              {futureSessionsList.map((session: any, i: number) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm overflow-hidden relative"
+                >
+                  {/* left sport accent */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-2xl" style={{ background: accentColor }} />
+                  <span className="text-xl ml-1">{session.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 truncate">{session.title}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{session.date} · {session.duration} min</p>
+                  </div>
+                  <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-gray-500">Solo</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Quick actions */}
+        {/* ── ACCES RAPIDE ── */}
         <div>
-          <h2 className="mb-3 text-sm font-bold text-text">Acces rapide</h2>
-          <div className="grid grid-cols-3 gap-3">
+          <h2 className="text-sm font-bold text-gray-900 mb-3">Acces rapide</h2>
+          <div className="grid grid-cols-2 gap-3">
             <button
               onClick={() => setShowModal(true)}
-              className="flex flex-col items-center gap-2 rounded-2xl bg-gradient-to-br from-brand-500 to-cyan-500 p-4 text-white text-center"
+              className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow text-left"
             >
-              <span className="text-2xl">🏋️</span>
-              <span className="text-[11px] font-semibold">Nouvelle seance</span>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-50 text-xl">🏋️</span>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Nouvelle seance</p>
+                <p className="text-xs text-gray-400">Seance solo</p>
+              </div>
             </button>
-            <Link href="/explore" className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-white p-4 text-center">
-              <span className="text-2xl">🔍</span>
-              <span className="text-[11px] font-semibold text-text">Trouver un coach</span>
+
+            <Link
+              href="/explore"
+              className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-xl">🔍</span>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Trouver un coach</p>
+                <p className="text-xs text-gray-400">Explorer</p>
+              </div>
             </Link>
-            <Link href="/goals" className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-white p-4 text-center">
-              <span className="text-2xl">🎯</span>
-              <span className="text-[11px] font-semibold text-text">Mes objectifs</span>
+
+            <Link
+              href="/explore/programs"
+              className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-xl">📋</span>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Programmes</p>
+                <p className="text-xs text-gray-400">Plans d'entrainement</p>
+              </div>
+            </Link>
+
+            <Link
+              href={dashBodyState ? '/progress#body' : '/goals'}
+              className="flex items-center gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-md transition-shadow"
+            >
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-xl">
+                {dashBodyState ? '🫀' : '🎯'}
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">{dashBodyState ? 'Mon corps' : 'Mes objectifs'}</p>
+                <p className="text-xs text-gray-400">{dashBodyState ? 'Etat & recuperation' : 'Suivi progression'}</p>
+              </div>
             </Link>
           </div>
         </div>
 
-        {/* Recent activity */}
-        {allRecent.length > 0 && (
+        {/* ── ACTIVITE RECENTE ── */}
+        {recentActivity.length > 0 && (
           <div>
-            <h2 className="mb-3 text-sm font-bold text-text">Activite recente</h2>
+            <h2 className="text-sm font-bold text-gray-900 mb-3">Activite recente</h2>
             <div className="space-y-2">
-              {allRecent.map((a: any, i: number) => (
-                <div key={i} className="flex items-center gap-3 rounded-xl border border-border bg-white p-3">
-                  <span className="text-xl">{a.emoji || '🏃'}</span>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-text">{a.title}</p>
-                    <p className="text-xs text-muted">{a.date} · {a.duration} min</p>
+              {recentActivity.map((a: any, i: number) => (
+                <div key={i} className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50 p-3.5">
+                  <span className="text-xl opacity-70">{a.emoji || '🏃'}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-600 truncate">{a.title}</p>
+                    <p className="text-xs text-gray-400">{a.date} · {a.duration} min</p>
                   </div>
                   {a.source === 'solo' && (
-                    <span className="rounded-full bg-brand-500/10 px-2 py-0.5 text-[10px] font-semibold text-brand-500">Solo</span>
+                    <span className="rounded-full bg-white border border-gray-200 px-2 py-0.5 text-[10px] font-semibold text-gray-400">Solo</span>
                   )}
                   {a.source === 'synced' && (
-                    <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold text-blue-500">Sync</span>
+                    <span className="rounded-full bg-white border border-blue-200 px-2 py-0.5 text-[10px] font-semibold text-blue-400">Sync</span>
                   )}
                 </div>
               ))}
@@ -340,11 +456,26 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Insight du jour */}
+        {/* ── INSIGHT DU JOUR ── */}
         <div>
-          <h2 className="mb-3 text-sm font-bold text-text">Insight du jour</h2>
+          <h2 className="text-sm font-bold text-gray-900 mb-3">Suggestion du jour</h2>
           <WorkoutSuggestionCard compact />
         </div>
+
+        {/* ── READINESS CARD (full) — only if no inline stats ── */}
+        {dashBodyState && !nextSession && (
+          <ReadinessScore
+            bodyState={dashBodyState}
+            compact
+            onClick={() => router.push('/progress#body')}
+          />
+        )}
+
+        {/* ── ONBOARDING CHECKLIST ── */}
+        {showChecklist && !allChecklistDone && (
+          <OnboardingChecklist items={checklistItems} onDismiss={handleDismissChecklist} />
+        )}
+
       </div>
 
       <CreateSessionModal
