@@ -290,17 +290,17 @@ const FITNESS = [
 ];
 
 // ── Triathlon — Swimming (technique / interval focus) ────────────────────────
-const SWIM_PROFILE = {
+const TRI_SWIM_PROFILE = {
   muscle_engagement: { shoulders: 85, upper_back: 80, core: 70, triceps: 65, chest: 60 },
   tendon_stress: { rotator_cuff: 80, biceps_tendon: 50 },
   joint_impact: { shoulders: 70, elbows: 30 },
 };
 const TRIATHLON_SWIM = [
-  { name: 'Éducatifs crawl', name_en: 'Crawl Technique Drills', sport: 'triathlon', category: 'cardio', default_duration: 30, default_rpe: 4, ...SWIM_PROFILE },
-  { name: 'Séries 100m', name_en: '100m Interval Sets', sport: 'triathlon', category: 'cardio', default_duration: 35, default_rpe: 7, ...SWIM_PROFILE },
-  { name: 'Séries 400m', name_en: '400m Interval Sets', sport: 'triathlon', category: 'cardio', default_duration: 45, default_rpe: 7, ...SWIM_PROFILE },
-  { name: 'Simulation eau libre', name_en: 'Open Water Simulation', sport: 'triathlon', category: 'cardio', default_duration: 40, default_rpe: 6, ...SWIM_PROFILE },
-  { name: 'Pull buoy endurance', name_en: 'Pull Buoy Endurance', sport: 'triathlon', category: 'cardio', default_duration: 35, default_rpe: 5, ...SWIM_PROFILE },
+  { name: 'Éducatifs crawl', name_en: 'Crawl Technique Drills', sport: 'triathlon', category: 'cardio', default_duration: 30, default_rpe: 4, ...TRI_SWIM_PROFILE },
+  { name: 'Séries 100m (tri)', name_en: '100m Interval Sets', sport: 'triathlon', category: 'cardio', default_duration: 35, default_rpe: 7, ...TRI_SWIM_PROFILE },
+  { name: 'Séries 400m', name_en: '400m Interval Sets', sport: 'triathlon', category: 'cardio', default_duration: 45, default_rpe: 7, ...TRI_SWIM_PROFILE },
+  { name: 'Simulation eau libre', name_en: 'Open Water Simulation', sport: 'triathlon', category: 'cardio', default_duration: 40, default_rpe: 6, ...TRI_SWIM_PROFILE },
+  { name: 'Pull buoy endurance', name_en: 'Pull Buoy Endurance', sport: 'triathlon', category: 'cardio', default_duration: 35, default_rpe: 5, ...TRI_SWIM_PROFILE },
   { name: 'Séries jambes (natation)', name_en: 'Kick Sets', sport: 'triathlon', category: 'cardio', default_duration: 25, default_rpe: 5,
     muscle_engagement: { calves: 70, quadriceps: 60, glutes: 55, core: 50 },
     tendon_stress: { achilles: 40 },
@@ -339,19 +339,19 @@ const TRIATHLON_RUN = [
 // ── Triathlon — Transitions ──────────────────────────────────────────────────
 const TRIATHLON_TRANSITIONS = [
   {
-    name: 'Pratique T1 (natation→vélo)', name_en: 'T1 Practice (swim to bike)', sport: 'triathlon', category: 'other', default_duration: 15, default_rpe: 4,
+    name: 'Pratique T1 (natation→vélo)', name_en: 'T1 Practice (swim to bike)', sport: 'triathlon', category: 'cardio', default_duration: 15, default_rpe: 4,
     muscle_engagement: { core: 30, shoulders: 25, quadriceps: 20 },
     tendon_stress: {},
     joint_impact: {},
   },
   {
-    name: 'Pratique T2 (vélo→course)', name_en: 'T2 Practice (bike to run)', sport: 'triathlon', category: 'other', default_duration: 15, default_rpe: 4,
+    name: 'Pratique T2 (vélo→course)', name_en: 'T2 Practice (bike to run)', sport: 'triathlon', category: 'cardio', default_duration: 15, default_rpe: 4,
     muscle_engagement: { core: 30, quadriceps: 25, calves: 20 },
     tendon_stress: {},
     joint_impact: {},
   },
   {
-    name: 'Répétition transitions complètes', name_en: 'Full Transition Rehearsal', sport: 'triathlon', category: 'other', default_duration: 30, default_rpe: 5,
+    name: 'Répétition transitions complètes', name_en: 'Full Transition Rehearsal', sport: 'triathlon', category: 'cardio', default_duration: 30, default_rpe: 5,
     muscle_engagement: { core: 35, shoulders: 25, quadriceps: 30, calves: 20 },
     tendon_stress: {},
     joint_impact: {},
