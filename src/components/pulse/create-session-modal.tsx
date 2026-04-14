@@ -3,9 +3,8 @@
 import { useState } from 'react';
 import { Button } from './button';
 import { Input } from './input';
-import { Select } from './select';
 import { Textarea } from './textarea';
-import { SPORTS, SPORT_LABELS, SPORT_EMOJIS } from '@/lib/sports';
+import { SPORTS, SPORT_LABELS, SPORT_EMOJIS, type Sport } from '@/lib/sports';
 
 interface Exercise {
   name: string;
@@ -22,56 +21,176 @@ interface CreateSessionModalProps {
   defaultDate?: string;
 }
 
+// Presets par sport — quick-start en 1 tap
+const SPORT_PRESETS: Record<string, Array<{ label: string; duration: number; exercises: Exercise[] }>> = {
+  musculation: [
+    { label: 'Push Day', duration: 60, exercises: [
+      { name: 'Developpe couche', sets: 4, reps: 10, rest_seconds: 90 },
+      { name: 'Developpe incline', sets: 3, reps: 12, rest_seconds: 75 },
+      { name: 'Dips', sets: 3, reps: 12, rest_seconds: 60 },
+      { name: 'Extensions triceps', sets: 3, reps: 15, rest_seconds: 45 },
+    ]},
+    { label: 'Pull Day', duration: 60, exercises: [
+      { name: 'Tractions', sets: 4, reps: 8, rest_seconds: 90 },
+      { name: 'Rowing barre', sets: 4, reps: 10, rest_seconds: 75 },
+      { name: 'Curl biceps', sets: 3, reps: 12, rest_seconds: 45 },
+      { name: 'Face pull', sets: 3, reps: 15, rest_seconds: 45 },
+    ]},
+    { label: 'Leg Day', duration: 60, exercises: [
+      { name: 'Squat', sets: 4, reps: 10, rest_seconds: 120 },
+      { name: 'Fentes avant', sets: 3, reps: 12, rest_seconds: 60 },
+      { name: 'Souleve de terre roumain', sets: 3, reps: 10, rest_seconds: 75 },
+      { name: 'Mollets', sets: 4, reps: 15, rest_seconds: 45 },
+    ]},
+    { label: 'Full Body', duration: 75, exercises: [
+      { name: 'Squat', sets: 3, reps: 10, rest_seconds: 90 },
+      { name: 'Developpe couche', sets: 3, reps: 10, rest_seconds: 90 },
+      { name: 'Tractions', sets: 3, reps: 8, rest_seconds: 75 },
+      { name: 'Gainage planche', sets: 3, reps: 1, rest_seconds: 45, duration_minutes: 1 },
+    ]},
+  ],
+  running: [
+    { label: 'Footing facile', duration: 40, exercises: [
+      { name: 'Footing endurance', sets: 1, reps: 1, rest_seconds: 0, duration_minutes: 40 },
+    ]},
+    { label: 'Fractionne 30/30', duration: 45, exercises: [
+      { name: 'Echauffement', sets: 1, reps: 1, rest_seconds: 0, duration_minutes: 10 },
+      { name: 'Sprint 30s', sets: 10, reps: 1, rest_seconds: 30 },
+      { name: 'Retour au calme', sets: 1, reps: 1, rest_seconds: 0, duration_minutes: 10 },
+    ]},
+    { label: 'Sortie longue', duration: 90, exercises: [
+      { name: 'Course endurance', sets: 1, reps: 1, rest_seconds: 0, duration_minutes: 90 },
+    ]},
+    { label: 'Tempo run', duration: 50, exercises: [
+      { name: 'Echauffement', sets: 1, reps: 1, rest_seconds: 0, duration_minutes: 10 },
+      { name: 'Course tempo', sets: 3, reps: 1, rest_seconds: 120, duration_minutes: 8 },
+      { name: 'Retour au calme', sets: 1, reps: 1, rest_seconds: 0, duration_minutes: 5 },
+    ]},
+  ],
+  crossfit: [
+    { label: 'WOD du jour', duration: 45, exercises: [
+      { name: 'Burpees', sets: 3, reps: 15, rest_seconds: 60 },
+      { name: 'Box jumps', sets: 3, reps: 12, rest_seconds: 60 },
+      { name: 'Thrusters', sets: 3, reps: 10, rest_seconds: 60 },
+      { name: 'Wall balls', sets: 3, reps: 15, rest_seconds: 60 },
+    ]},
+    { label: 'AMRAP 20 min', duration: 30, exercises: [
+      { name: 'AMRAP Pompes + Squats + Tractions', sets: 1, reps: 1, rest_seconds: 0, duration_minutes: 20 },
+    ]},
+  ],
+  yoga: [
+    { label: 'Flow 30 min', duration: 30, exercises: [
+      { name: 'Salutation au soleil', sets: 5, reps: 1, rest_seconds: 15, duration_minutes: 2 },
+      { name: 'Guerrier I + II', sets: 2, reps: 1, rest_seconds: 10, duration_minutes: 3 },
+      { name: 'Etirement final', sets: 1, reps: 1, rest_seconds: 0, duration_minutes: 5 },
+    ]},
+    { label: 'Stretching recovery', duration: 20, exercises: [
+      { name: 'Etirement ischio-jambiers', sets: 2, reps: 1, rest_seconds: 15, duration_minutes: 1 },
+      { name: 'Etirement quadriceps', sets: 2, reps: 1, rest_seconds: 15, duration_minutes: 1 },
+      { name: 'Etirement hanches', sets: 2, reps: 1, rest_seconds: 15, duration_minutes: 1 },
+      { name: 'Gainage planche', sets: 2, reps: 1, rest_seconds: 30, duration_minutes: 1 },
+    ]},
+  ],
+  natation: [
+    { label: 'Technique crawl', duration: 45, exercises: [
+      { name: 'Echauffement 200m', sets: 1, reps: 1, rest_seconds: 30, duration_minutes: 5 },
+      { name: 'Series 100m', sets: 6, reps: 1, rest_seconds: 30, duration_minutes: 2 },
+      { name: 'Educatifs', sets: 4, reps: 1, rest_seconds: 20, duration_minutes: 3 },
+    ]},
+  ],
+  cyclisme: [
+    { label: 'Sortie endurance', duration: 90, exercises: [
+      { name: 'Velo zone 2', sets: 1, reps: 1, rest_seconds: 0, duration_minutes: 90 },
+    ]},
+    { label: 'Intervalles', duration: 60, exercises: [
+      { name: 'Echauffement velo', sets: 1, reps: 1, rest_seconds: 0, duration_minutes: 15 },
+      { name: 'Intervalle 3 min haute intensite', sets: 5, reps: 1, rest_seconds: 180, duration_minutes: 3 },
+      { name: 'Retour au calme', sets: 1, reps: 1, rest_seconds: 0, duration_minutes: 10 },
+    ]},
+  ],
+};
+
 const QUICK_EXERCISES: Record<string, string[]> = {
-  musculation: ['Squats', 'Développé couché', 'Tractions', 'Soulevé de terre', 'Rowing', 'Curl biceps', 'Dips', 'Fentes'],
-  crossfit: ['Burpees', 'Box jumps', 'Thrusters', 'Wall balls', 'Double-unders', 'Toes to bar', 'Clean & jerk'],
-  yoga: ['Salutation au soleil', 'Guerrier I', 'Guerrier II', 'Chien tête en bas', 'Planche', 'Pont'],
-  running: ['Course continue', 'Fractionné', 'Côtes', 'Tempo run', 'Récupération'],
-  cyclisme: ['Sortie endurance', 'Intervalles', 'Côtes', 'Tempo', 'Récupération'],
-  natation: ['Crawl continu', 'Séries 100m', 'Dos', 'Brasse', 'Éducatifs'],
-  boxe: ['Shadow boxing', 'Sac lourd', 'Corde à sauter', 'Pattes d\'ours', 'Sparring'],
-  fitness: ['Gainage', 'Pompes', 'Abdos', 'Mountain climbers', 'Jumping jacks'],
+  musculation: ['Squat', 'Developpe couche', 'Tractions', 'Curl biceps', 'Dips', 'Fentes', 'Gainage planche'],
+  crossfit: ['Burpees', 'Box jumps', 'Thrusters', 'Wall balls', 'Toes to bar', 'Clean & jerk'],
+  yoga: ['Salutation au soleil', 'Guerrier I', 'Guerrier II', 'Chien tete en bas', 'Planche'],
+  running: ['Footing', 'Fractionne', 'Cotes', 'Tempo', 'Recuperation'],
+  cyclisme: ['Sortie endurance', 'Intervalles', 'Cotes', 'Tempo'],
+  natation: ['Crawl continu', 'Series 100m', 'Dos', 'Educatifs'],
+  boxe: ['Shadow boxing', 'Sac lourd', 'Corde a sauter', 'Sparring'],
+  fitness: ['Gainage', 'Pompes', 'Abdos', 'Mountain climbers'],
+};
+
+// Sport accent colors
+const SPORT_COLORS: Record<string, string> = {
+  running: '#3b82f6', trail: '#10b981', triathlon: '#0ea5e9', crossfit: '#ef4444',
+  musculation: '#10b981', cyclisme: '#14b8a6', natation: '#0ea5e9', yoga: '#8b5cf6',
+  boxe: '#f59e0b', fitness: '#f97316', pilates: '#a78bfa', meditation: '#6366f1',
 };
 
 function CreateSessionModal({ open, onClose, onCreated, defaultDate }: CreateSessionModalProps) {
+  const [step, setStep] = useState<'sport' | 'config'>('sport');
   const [sport, setSport] = useState('');
   const [title, setTitle] = useState('');
   const [duration, setDuration] = useState('60');
   const [scheduledAt, setScheduledAt] = useState(defaultDate || '');
   const [notes, setNotes] = useState('');
   const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [showExercises, setShowExercises] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   if (!open) return null;
 
-  const sportOptions = SPORTS.map((s) => ({
-    value: s,
-    label: `${SPORT_EMOJIS[s]} ${SPORT_LABELS[s]}`,
-  }));
+  const accent = SPORT_COLORS[sport] || '#6b7280';
+  const presets = sport ? (SPORT_PRESETS[sport] || []) : [];
+  const quickList = sport ? (QUICK_EXERCISES[sport] || QUICK_EXERCISES.fitness || []) : [];
 
-  const quickList = sport ? (QUICK_EXERCISES[sport] || QUICK_EXERCISES.fitness) : [];
+  const selectSport = (s: string) => {
+    setSport(s);
+    setExercises([]);
+    setTitle('');
+    setStep('config');
+    // Set default time to now + 1h rounded
+    if (!scheduledAt) {
+      const d = new Date();
+      d.setHours(d.getHours() + 1, 0, 0, 0);
+      setScheduledAt(d.toISOString().slice(0, 16));
+    }
+  };
+
+  const selectPreset = (preset: typeof presets[0]) => {
+    setTitle(preset.label);
+    setDuration(String(preset.duration));
+    setExercises(preset.exercises);
+  };
 
   const addExercise = (name: string) => {
     setExercises(prev => [...prev, { name, sets: 3, reps: 10, rest_seconds: 60 }]);
-    if (!showExercises) setShowExercises(true);
-  };
-
-  const updateExercise = (idx: number, field: keyof Exercise, value: string | number) => {
-    setExercises(prev => prev.map((e, i) => i === idx ? { ...e, [field]: value } : e));
   };
 
   const removeExercise = (idx: number) => {
     setExercises(prev => prev.filter((_, i) => i !== idx));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+  const updateExercise = (idx: number, field: keyof Exercise, value: number) => {
+    setExercises(prev => prev.map((e, i) => i === idx ? { ...e, [field]: value } : e));
+  };
 
+  const reset = () => {
+    setSport('');
+    setTitle('');
+    setDuration('60');
+    setScheduledAt(defaultDate || '');
+    setNotes('');
+    setExercises([]);
+    setStep('sport');
+    setError('');
+  };
+
+  const handleSubmit = async () => {
+    setError('');
     if (!sport || !duration || !scheduledAt) {
-      setError('Veuillez remplir tous les champs requis');
+      setError('Remplissez sport, duree et date');
       return;
     }
 
@@ -82,7 +201,7 @@ function CreateSessionModal({ open, onClose, onCreated, defaultDate }: CreateSes
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sport,
-          title: title || `${SPORT_LABELS[sport as keyof typeof SPORT_LABELS]} solo`,
+          title: title || `${SPORT_LABELS[sport as Sport]} solo`,
           duration_minutes: parseInt(duration, 10),
           scheduled_at: new Date(scheduledAt).toISOString(),
           notes,
@@ -96,18 +215,11 @@ function CreateSessionModal({ open, onClose, onCreated, defaultDate }: CreateSes
       }
 
       await fetch('/api/streaks', { method: 'POST' }).catch(() => {});
-
-      setSport('');
-      setTitle('');
-      setDuration('60');
-      setScheduledAt(defaultDate || '');
-      setNotes('');
-      setExercises([]);
-      setShowExercises(false);
+      reset();
       onCreated?.();
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erreur de création');
+      setError(err instanceof Error ? err.message : 'Erreur');
     } finally {
       setLoading(false);
     }
@@ -115,161 +227,213 @@ function CreateSessionModal({ open, onClose, onCreated, defaultDate }: CreateSes
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { reset(); onClose(); }} />
 
-      <div className="relative w-full max-w-lg rounded-t-2xl sm:rounded-2xl bg-white p-5 shadow-xl max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-text">Nouvelle séance</h2>
-          <button
-            onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-surface text-muted hover:bg-gray-200 transition"
-          >
-            ✕
-          </button>
-        </div>
+      <div className="relative w-full max-w-lg rounded-t-2xl sm:rounded-2xl bg-white shadow-xl max-h-[90vh] overflow-y-auto">
+        {/* ── Step 1: Choix du sport ─────────────────────────────────── */}
+        {step === 'sport' && (
+          <div className="p-5">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-bold text-gray-900">Nouvelle seance</h2>
+              <button onClick={() => { reset(); onClose(); }}
+                className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-200 transition">
+                ✕
+              </button>
+            </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <Select
-            label="Sport"
-            required
-            options={sportOptions}
-            placeholder="Choisir un sport"
-            value={sport}
-            onChange={(e) => { setSport(e.target.value); setExercises([]); }}
-          />
+            <p className="text-sm text-gray-500 mb-4">Quel sport aujourd&apos;hui ?</p>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Input
-              label="Durée (min)"
-              required
-              type="number"
-              min={5}
-              max={480}
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-            />
-            <Input
-              label="Date et heure"
-              required
-              type="datetime-local"
-              value={scheduledAt}
-              onChange={(e) => setScheduledAt(e.target.value)}
-            />
+            <div className="grid grid-cols-3 gap-2">
+              {SPORTS.filter(s => s !== 'autre').map((s) => (
+                <button
+                  key={s}
+                  onClick={() => selectSport(s)}
+                  className="flex flex-col items-center gap-1.5 rounded-xl border border-gray-200 p-3 hover:border-brand-300 hover:bg-brand-50/30 transition-all group"
+                >
+                  <span className="text-2xl group-hover:scale-110 transition-transform">{SPORT_EMOJIS[s]}</span>
+                  <span className="text-[11px] font-medium text-gray-700 leading-tight text-center">
+                    {SPORT_LABELS[s]}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
+        )}
 
-          <Input
-            label="Titre (optionnel)"
-            placeholder="Ex: Upper body, sortie longue..."
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-          />
-
-          {/* Quick add exercises */}
-          {sport && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium text-text">Exercices</label>
-                <span className="text-xs text-muted">{exercises.length} ajouté{exercises.length > 1 ? 's' : ''}</span>
+        {/* ── Step 2: Configuration ──────────────────────────────────── */}
+        {step === 'config' && (
+          <div>
+            {/* Header with sport */}
+            <div className="px-5 pt-5 pb-3 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <button onClick={() => setStep('sport')}
+                    className="text-sm text-gray-400 hover:text-gray-600 transition">
+                    ←
+                  </button>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{SPORT_EMOJIS[sport as Sport]}</span>
+                    <span className="font-bold text-gray-900">{SPORT_LABELS[sport as Sport]}</span>
+                  </div>
+                </div>
+                <button onClick={() => { reset(); onClose(); }}
+                  className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 hover:bg-gray-200 transition">
+                  ✕
+                </button>
               </div>
+            </div>
 
-              {/* Quick chips */}
-              <div className="flex flex-wrap gap-1.5 mb-3">
-                {quickList.map(name => {
-                  const added = exercises.some(e => e.name === name);
-                  return (
-                    <button
-                      key={name}
-                      type="button"
-                      onClick={() => !added && addExercise(name)}
-                      className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                        added
-                          ? 'bg-brand-500/10 text-brand-600'
-                          : 'bg-surface text-muted hover:bg-surface/80'
-                      }`}
-                    >
-                      {added ? '✓ ' : '+ '}{name}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Exercise list with details */}
-              {exercises.length > 0 && (
-                <div className="space-y-2">
-                  {exercises.map((ex, i) => (
-                    <div key={i} className="rounded-xl bg-surface p-3">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-semibold text-text">{ex.name}</span>
+            <div className="p-5 space-y-5">
+              {/* Presets — 1 tap pour tout remplir */}
+              {presets.length > 0 && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                    Seances rapides
+                  </p>
+                  <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+                    {presets.map((p) => {
+                      const isActive = title === p.label;
+                      return (
                         <button
-                          type="button"
-                          onClick={() => removeExercise(i)}
-                          className="text-xs text-muted hover:text-danger"
+                          key={p.label}
+                          onClick={() => selectPreset(p)}
+                          className={`flex-shrink-0 rounded-xl px-4 py-2.5 text-left transition-all border ${
+                            isActive
+                              ? 'border-transparent text-white'
+                              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                          }`}
+                          style={isActive ? { background: accent } : {}}
                         >
-                          ✕
+                          <span className="text-sm font-semibold block">{p.label}</span>
+                          <span className={`text-[11px] ${isActive ? 'text-white/70' : 'text-gray-400'}`}>
+                            {p.duration} min · {p.exercises.length} exo
+                          </span>
                         </button>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div>
-                          <label className="text-[10px] text-muted">Séries</label>
-                          <input
-                            type="number"
-                            min={1}
-                            max={20}
-                            value={ex.sets}
-                            onChange={(e) => updateExercise(i, 'sets', +e.target.value)}
-                            className="w-full rounded-lg border border-border px-2 py-1.5 text-sm text-center"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] text-muted">Reps</label>
-                          <input
-                            type="number"
-                            min={1}
-                            max={100}
-                            value={ex.reps}
-                            onChange={(e) => updateExercise(i, 'reps', +e.target.value)}
-                            className="w-full rounded-lg border border-border px-2 py-1.5 text-sm text-center"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] text-muted">Repos (s)</label>
-                          <input
-                            type="number"
-                            min={0}
-                            max={600}
-                            step={15}
-                            value={ex.rest_seconds}
-                            onChange={(e) => updateExercise(i, 'rest_seconds', +e.target.value)}
-                            className="w-full rounded-lg border border-border px-2 py-1.5 text-sm text-center"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                      );
+                    })}
+                  </div>
                 </div>
               )}
+
+              {/* Date & duration */}
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="Quand"
+                  required
+                  type="datetime-local"
+                  value={scheduledAt}
+                  onChange={(e) => setScheduledAt(e.target.value)}
+                />
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-1.5 block">Duree</label>
+                  <div className="flex gap-1.5">
+                    {[30, 45, 60, 90].map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        onClick={() => setDuration(String(d))}
+                        className={`flex-1 rounded-lg py-2 text-xs font-semibold transition ${
+                          duration === String(d)
+                            ? 'text-white'
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        }`}
+                        style={duration === String(d) ? { background: accent } : {}}
+                      >
+                        {d}&apos;
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Title */}
+              <Input
+                label="Titre"
+                placeholder={`${SPORT_LABELS[sport as Sport]} du ${new Date().toLocaleDateString('fr-FR', { weekday: 'long' })}`}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+
+              {/* Exercises */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-sm font-medium text-gray-700">Exercices</label>
+                  <span className="text-[11px] text-gray-400">{exercises.length} exercice{exercises.length > 1 ? 's' : ''}</span>
+                </div>
+
+                {/* Exercise list */}
+                {exercises.length > 0 && (
+                  <div className="space-y-1.5 mb-3">
+                    {exercises.map((ex, i) => (
+                      <div key={i} className="flex items-center gap-2 rounded-lg bg-gray-50 px-3 py-2">
+                        <span className="text-xs font-semibold text-gray-900 flex-1 truncate">{ex.name}</span>
+                        <div className="flex items-center gap-1.5 text-[11px] text-gray-500 shrink-0">
+                          {ex.duration_minutes ? (
+                            <span>{ex.sets > 1 ? `${ex.sets}×` : ''}{ex.duration_minutes}min</span>
+                          ) : (
+                            <span>{ex.sets}×{ex.reps}</span>
+                          )}
+                          <span className="text-gray-300">·</span>
+                          <span>{ex.rest_seconds}s</span>
+                        </div>
+                        <button onClick={() => removeExercise(i)}
+                          className="text-gray-300 hover:text-red-500 transition text-xs ml-1">✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Quick add chips */}
+                <div className="flex flex-wrap gap-1.5">
+                  {quickList.map(name => {
+                    const added = exercises.some(e => e.name === name);
+                    return (
+                      <button
+                        key={name}
+                        type="button"
+                        onClick={() => !added && addExercise(name)}
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-medium transition border ${
+                          added
+                            ? 'border-transparent text-white'
+                            : 'border-gray-200 text-gray-600 hover:border-gray-300 bg-white'
+                        }`}
+                        style={added ? { background: accent } : {}}
+                      >
+                        {added ? '✓' : '+'} {name}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Notes */}
+              <Textarea
+                label="Notes"
+                placeholder="Objectif, sensations..."
+                rows={2}
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+
+              {error && <p className="text-sm text-red-500">{error}</p>}
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-1">
+                <Button type="button" variant="secondary" onClick={() => { reset(); onClose(); }} className="flex-1">
+                  Annuler
+                </Button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={loading || !scheduledAt}
+                  className="flex-1 rounded-xl py-2.5 text-sm font-bold text-white transition disabled:opacity-50"
+                  style={{ background: accent }}
+                >
+                  {loading ? 'Creation...' : exercises.length > 0 ? 'Creer et lancer' : 'Creer'}
+                </button>
+              </div>
             </div>
-          )}
-
-          <Textarea
-            label="Notes (optionnel)"
-            placeholder="Objectif, sensations..."
-            rows={2}
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-          />
-
-          {error && <p className="text-sm text-danger">{error}</p>}
-
-          <div className="flex gap-3 pt-2">
-            <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
-              Annuler
-            </Button>
-            <Button type="submit" variant="primary" loading={loading} className="flex-1">
-              Créer
-            </Button>
           </div>
-        </form>
+        )}
       </div>
     </div>
   );
