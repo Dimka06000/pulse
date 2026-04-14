@@ -3,34 +3,70 @@
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { DraggableSessionCard, type DraggableItem } from './draggable-session-card';
+import { isMultiSport } from '@/lib/sports';
+import type { Discipline } from '@/lib/training/types';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface SessionLibraryProps {
   sessions: { id: string; title: string; sport: string; duration: number; type: string }[];
-  routines: { id: string; title: string; type: string; duration_minutes: number }[];
-  onCreateSession: () => void;
-  onCreateRoutine: () => void;
+  routines: { id: string; title: string; type: string; duration: number }[];
+  onToggle?: () => void;
+  onCreateSession?: () => void;
+  onCreateRoutine?: () => void;
+  sport?: string;
+}
+
+// Discipline tabs for triathlon/duathlon
+const DISC_TABS: { id: Discipline | 'all'; label: string }[] = [
+  { id: 'all', label: 'Tous' },
+  { id: 'swim', label: '🏊 Natation' },
+  { id: 'bike', label: '🚴 Vélo' },
+  { id: 'run', label: '🏃 Course' },
+  { id: 'other', label: '🔄 Transitions' },
+];
+
+// Map session sport to discipline for filtering
+function sportToDiscipline(sport: string): Discipline | null {
+  if (sport === 'natation') return 'swim';
+  if (sport === 'cyclisme') return 'bike';
+  if (sport === 'running' || sport === 'trail') return 'run';
+  if (sport === 'triathlon' || sport === 'transition') return 'other';
+  return null;
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
 export function SessionLibrary({
   sessions,
   routines,
+  onToggle,
   onCreateSession,
   onCreateRoutine,
+  sport,
 }: SessionLibraryProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [search, setSearch] = useState('');
+  const [activeDisc, setActiveDisc] = useState<Discipline | 'all'>('all');
 
   const query = search.toLowerCase().trim();
+  const multiSport = sport ? isMultiSport(sport) : false;
 
-  const filteredSessions = sessions.filter((s) =>
-    s.title.toLowerCase().includes(query),
-  );
+  const filteredSessions = sessions.filter((s) => {
+    if (!s.title.toLowerCase().includes(query)) return false;
+    if (multiSport && activeDisc !== 'all') {
+      const disc = sportToDiscipline(s.sport);
+      if (disc !== activeDisc) return false;
+    }
+    return true;
+  });
 
   const filteredRoutines = routines.filter((r) =>
     r.title.toLowerCase().includes(query),
   );
+
+  const handleCollapse = () => {
+    setCollapsed(true);
+    onToggle?.();
+  };
 
   // Collapsed state — thin vertical bar
   if (collapsed) {
@@ -56,7 +92,7 @@ export function SessionLibrary({
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-bold text-gray-800">Bibliothèque</h3>
           <button
-            onClick={() => setCollapsed(true)}
+            onClick={handleCollapse}
             className="flex h-7 w-7 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-200 hover:text-gray-600 transition"
             aria-label="Réduire la bibliothèque"
           >
@@ -72,6 +108,25 @@ export function SessionLibrary({
           onChange={(e) => setSearch(e.target.value)}
           className="text-xs"
         />
+
+        {/* Discipline tabs — only for multi-sport */}
+        {multiSport && (
+          <div className="flex gap-1 mt-2 flex-wrap">
+            {DISC_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveDisc(tab.id)}
+                className={`rounded-md px-2 py-1 text-[10px] font-medium transition-colors ${
+                  activeDisc === tab.id
+                    ? 'bg-brand-500 text-white'
+                    : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Sessions section */}
@@ -97,14 +152,23 @@ export function SessionLibrary({
             };
             return <DraggableSessionCard key={s.id} item={item} />;
           })}
+          {filteredSessions.length === 0 && (
+            <p className="text-xs text-gray-400 py-2 text-center">
+              {multiSport && activeDisc !== 'all'
+                ? 'Aucune séance pour cette discipline'
+                : 'Aucune séance'}
+            </p>
+          )}
         </div>
 
-        <button
-          onClick={onCreateSession}
-          className="mt-2 w-full rounded-lg border border-dashed border-gray-300 px-3 py-2 text-xs font-medium text-gray-500 hover:border-brand-400 hover:text-brand-600 transition"
-        >
-          + Nouvelle séance
-        </button>
+        {onCreateSession && (
+          <button
+            onClick={onCreateSession}
+            className="mt-2 w-full rounded-lg border border-dashed border-gray-300 px-3 py-2 text-xs font-medium text-gray-500 hover:border-brand-400 hover:text-brand-600 transition"
+          >
+            + Nouvelle séance
+          </button>
+        )}
       </div>
 
       {/* Routines section */}
@@ -124,7 +188,7 @@ export function SessionLibrary({
               id: `routine-${r.id}`,
               title: r.title,
               sport: 'fitness',
-              duration: r.duration_minutes,
+              duration: r.duration,
               kind: 'routine',
               type: r.type,
             };
@@ -132,12 +196,14 @@ export function SessionLibrary({
           })}
         </div>
 
-        <button
-          onClick={onCreateRoutine}
-          className="mt-2 w-full rounded-lg border border-dashed border-gray-300 px-3 py-2 text-xs font-medium text-gray-500 hover:border-brand-400 hover:text-brand-600 transition"
-        >
-          + Nouvelle routine
-        </button>
+        {onCreateRoutine && (
+          <button
+            onClick={onCreateRoutine}
+            className="mt-2 w-full rounded-lg border border-dashed border-gray-300 px-3 py-2 text-xs font-medium text-gray-500 hover:border-brand-400 hover:text-brand-600 transition"
+          >
+            + Nouvelle routine
+          </button>
+        )}
       </div>
     </div>
   );

@@ -17,7 +17,10 @@ import { FeedbackPanel } from './feedback-panel';
 import { RuleEditorModal, type ProgramRule } from './rule-editor-modal';
 import { LoadChart } from './load-chart';
 import { EvidencePanel } from './evidence-panel';
-import { SPORT_EMOJIS, type Sport } from '@/lib/sports';
+import { SPORT_EMOJIS, isMultiSport, type Sport } from '@/lib/sports';
+import { TRIATHLON_DISCIPLINES, DUATHLON_DISCIPLINES, DISCIPLINE_COLORS } from '@/lib/training/exercises';
+import { computeWeeklyDisciplineVolume, formatDuration } from '@/lib/training/multi-sport-load';
+import type { Discipline } from '@/lib/training/types';
 import type { DraggableItem } from './draggable-session-card';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -250,6 +253,18 @@ export function ProgramBuilder({
   const sportEmoji = SPORT_EMOJIS[program.sport as Sport] || '⚡';
   const programStartDate = new Date().toISOString().slice(0, 10);
 
+  // Multi-sport: compute weekly volume per discipline
+  const multiSport = isMultiSport(program.sport);
+  const multiSportDisciplines: Discipline[] =
+    program.sport === 'triathlon'
+      ? TRIATHLON_DISCIPLINES
+      : program.sport === 'duathlon'
+        ? DUATHLON_DISCIPLINES
+        : [];
+  const weeklyDisciplineVolume = multiSport
+    ? computeWeeklyDisciplineVolume(weekWorkouts, multiSportDisciplines)
+    : null;
+
   // Calculate TSB per day for the active week from loadData
   const tsbByDay: Record<number, number> | undefined = (() => {
     if (!proMode || !loadData?.history?.length) return undefined;
@@ -288,6 +303,7 @@ export function ProgramBuilder({
               sessions={sessions}
               routines={routines}
               onToggle={() => setLibraryOpen(false)}
+              sport={program.sport}
             />
           )}
         </div>
@@ -342,6 +358,7 @@ export function ProgramBuilder({
                 history={loadData.history}
                 blocks={blocks?.map((b) => ({ phase: b.phase, weekStart: b.week_start, weekEnd: b.week_end }))}
                 totalWeeks={program.duration_weeks}
+                sport={program.sport}
               />
             )}
             {proMode && (
@@ -350,6 +367,28 @@ export function ProgramBuilder({
                 sport={program.sport}
               />
             )}
+            {/* Multi-sport: weekly volume summary per discipline */}
+            {multiSport && weeklyDisciplineVolume && (
+              <div className="flex flex-wrap gap-2 mb-3 p-3 rounded-xl bg-white border border-gray-200">
+                <span className="text-xs font-semibold text-gray-600 self-center mr-1">
+                  Volume S{activeWeek} :
+                </span>
+                {multiSportDisciplines.map((disc) => {
+                  const vol = weeklyDisciplineVolume[disc];
+                  const colors = DISCIPLINE_COLORS[disc];
+                  const emoji = disc === 'swim' ? '🏊' : disc === 'bike' ? '🚴' : '🏃';
+                  return (
+                    <span
+                      key={disc}
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${colors.bg} ${colors.text}`}
+                    >
+                      {emoji} {vol && vol.minutes > 0 ? formatDuration(vol.minutes) : '—'}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+
             <WeekGrid
               weekNumber={activeWeek}
               workouts={weekWorkouts}

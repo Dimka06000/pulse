@@ -101,12 +101,39 @@ export const SPORT_TO_DISCIPLINE: Record<Sport, Discipline> = {
   meditation: 'rest',
   natation: 'swim',
   cyclisme: 'bike',
+  // Multi-sport: primary discipline is 'run' (most metabolically demanding for injury risk)
+  triathlon: 'run',
+  duathlon: 'run',
   autre: 'other',
+};
+
+// Triathlon: all component disciplines
+export const TRIATHLON_DISCIPLINES: Discipline[] = ['swim', 'bike', 'run'];
+export const DUATHLON_DISCIPLINES: Discipline[] = ['run', 'bike'];
+
+// Typical triathlon volume distribution (% of total time)
+export const TRIATHLON_VOLUME_RATIO: Record<Discipline, number> = {
+  swim: 0.15,
+  bike: 0.45,
+  run: 0.40,
+  strength: 0,
+  rest: 0,
+  other: 0,
+};
+
+// Colors per discipline (for UI coding)
+export const DISCIPLINE_COLORS: Record<Discipline, { bg: string; text: string; border: string }> = {
+  swim: { bg: 'bg-sky-100', text: 'text-sky-700', border: 'border-sky-300' },
+  bike: { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-300' },
+  run: { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-300' },
+  strength: { bg: 'bg-violet-100', text: 'text-violet-700', border: 'border-violet-300' },
+  rest: { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-300' },
+  other: { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-300' },
 };
 
 // ── Cardio Sports ──
 
-const CARDIO_SPORTS = new Set<string>(['running', 'trail', 'cyclisme', 'natation']);
+const CARDIO_SPORTS = new Set<string>(['running', 'trail', 'cyclisme', 'natation', 'triathlon', 'duathlon']);
 
 export function isCardioSport(sport: string): boolean {
   return CARDIO_SPORTS.has(sport);

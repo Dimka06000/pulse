@@ -145,3 +145,36 @@ export interface MedicalConstraint {
   date?: string;
   active: boolean;
 }
+
+// ── Multi-Discipline Types (Triathlon / Duathlon) ──
+
+export interface DisciplineBlock {
+  discipline: Discipline;
+  exercises: Exercise[];
+  duration: number;      // minutes
+  intensity: number;     // 0-100
+  order: number;
+}
+
+export interface TransitionBlock {
+  fromDiscipline: Discipline;
+  toDiscipline: Discipline;
+  duration: number;      // typically 1-5 min
+  notes: string;
+}
+
+export interface MultiDisciplineWorkout {
+  id: string;
+  title: string;
+  disciplines: DisciplineBlock[];
+  totalDuration: number;
+  transitions: TransitionBlock[];
+}
+
+// Discipline-specific volume summary (used in triathlon weekly overview)
+export interface DisciplineVolume {
+  discipline: Discipline;
+  totalMinutes: number;
+  sessionCount: number;
+  percentOfTotal: number;
+}

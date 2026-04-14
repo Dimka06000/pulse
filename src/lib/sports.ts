@@ -1,6 +1,7 @@
 export const SPORTS = [
   'crossfit', 'yoga', 'running', 'trail', 'boxe', 'musculation',
-  'fitness', 'pilates', 'meditation', 'natation', 'cyclisme', 'autre',
+  'fitness', 'pilates', 'meditation', 'natation', 'cyclisme',
+  'triathlon', 'duathlon', 'autre',
 ] as const;
 
 export type Sport = typeof SPORTS[number];
@@ -17,6 +18,8 @@ export const SPORT_LABELS: Record<Sport, string> = {
   meditation: 'Méditation',
   natation: 'Natation',
   cyclisme: 'Cyclisme',
+  triathlon: 'Triathlon',
+  duathlon: 'Duathlon',
   autre: 'Autre',
 };
 
@@ -32,6 +35,8 @@ export const SPORT_EMOJIS: Record<Sport, string> = {
   meditation: '🧠',
   natation: '🏊',
   cyclisme: '🚴',
+  triathlon: '🏊🚴🏃',
+  duathlon: '🏃🚴',
   autre: '⚡',
 };
 
@@ -47,8 +52,17 @@ export const SPORT_GRADIENTS: Record<Sport, string> = {
   meditation: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
   natation: 'linear-gradient(135deg, #0ea5e9, #06b6d4)',
   cyclisme: 'linear-gradient(135deg, #14b8a6, #22c55e)',
+  triathlon: 'linear-gradient(135deg, #0ea5e9, #22c55e, #f97316)',
+  duathlon: 'linear-gradient(135deg, #22c55e, #f97316)',
   autre: 'linear-gradient(135deg, #64748b, #475569)',
 };
+
+// Multi-sport types that support multiple disciplines in one program
+export const MULTI_SPORT_TYPES = new Set<Sport>(['triathlon', 'duathlon']);
+
+export function isMultiSport(sport: string): sport is Sport {
+  return MULTI_SPORT_TYPES.has(sport as Sport);
+}
 
 export const SPORT_GRADIENT_CLASSES: Record<Sport, string> = {
   crossfit: 'from-red-500 to-orange-500',
@@ -62,5 +76,7 @@ export const SPORT_GRADIENT_CLASSES: Record<Sport, string> = {
   meditation: 'from-indigo-500 to-violet-500',
   natation: 'from-sky-500 to-cyan-500',
   cyclisme: 'from-teal-500 to-green-500',
+  triathlon: 'from-sky-500 to-orange-500',
+  duathlon: 'from-green-500 to-orange-500',
   autre: 'from-slate-500 to-slate-600',
 };

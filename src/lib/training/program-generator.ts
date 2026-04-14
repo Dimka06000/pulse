@@ -23,6 +23,7 @@ export interface GeneratedWorkout {
   title: string;
   description: string;
   durationMinutes: number;
+  discipline?: string; // 'swim' | 'bike' | 'run' | 'strength' | 'rest' | 'other'
   exercises: {
     name: string;
     sets?: number;
@@ -47,7 +48,28 @@ Règles:
 - Intensité en % (60-100) selon la phase et la semaine
 
 Réponds UNIQUEMENT avec un array JSON de workouts au format:
-[{ "weekNumber": 1, "dayNumber": 1, "title": "...", "description": "...", "durationMinutes": 60, "exercises": [{ "name": "...", "sets": 3, "reps": 10, "rest_seconds": 60 }], "intensityPercent": 70 }]`;
+[{ "weekNumber": 1, "dayNumber": 1, "title": "...", "description": "...", "durationMinutes": 60, "discipline": "run", "exercises": [{ "name": "...", "sets": 3, "reps": 10, "rest_seconds": 60 }], "intensityPercent": 70 }]`;
+
+const TRIATHLON_SYSTEM_PROMPT = `Tu es un coach triathlon expert en périodisation et programmation d'entraînement multisport.
+Génère un programme triathlon complet sous forme de JSON.
+
+Règles triathlon:
+- Distribution volumique typique: 15% natation, 45% vélo, 40% course à pied (par durée)
+- Inclure 1-2 séances "brick" par semaine (vélo suivi de course, sans pause)
+- Inclure des séances de pratique de transition (T1: natation→vélo, T2: vélo→course)
+- Phase base: volume élevé, intensité modérée. Surtout aérobique (z2)
+- Phase build: intervalles spécifiques par discipline, 1 brick/semaine
+- Phase peak: simulation de course, brick long, travail au seuil
+- Phase taper: réduction volume -40%, maintenir intensité. La natation diminue moins que la course
+- Chaque semaine a 6-9 séances (3 disciplines + transitions + récupération)
+- Repos: 1-2 jours par semaine
+- Adapte au niveau: débutant (sprint/olympique), intermédiaire (olympique/70.3), avancé (70.3/Ironman)
+
+Pour chaque workout, inclure le champ "discipline": "swim" | "bike" | "run" | "strength" | "rest" | "other"
+Les séances brick utilisent "discipline": "bike" (partie principale) et le titre indique "Brick"
+
+Réponds UNIQUEMENT avec un array JSON de workouts au format:
+[{ "weekNumber": 1, "dayNumber": 1, "title": "...", "description": "...", "durationMinutes": 60, "discipline": "run", "exercises": [{ "name": "...", "sets": 3, "reps": 10, "rest_seconds": 60 }], "intensityPercent": 70 }]`;
 
 function buildUserPrompt(input: GenerationInput): string {
   const parts: string[] = [];
@@ -111,13 +133,16 @@ export async function generateProgram(input: GenerationInput): Promise<Generated
 
   const userPrompt = buildUserPrompt(input) + buildEvidenceSection(evidence);
 
+  const isTriathlonSport = input.sport === 'triathlon' || input.sport === 'duathlon';
+  const systemPrompt = isTriathlonSport ? TRIATHLON_SYSTEM_PROMPT : SYSTEM_PROMPT;
+
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 4096,
     messages: [
       { role: 'user', content: userPrompt },
     ],
-    system: SYSTEM_PROMPT,
+    system: systemPrompt,
   });
 
   // Extract text content
