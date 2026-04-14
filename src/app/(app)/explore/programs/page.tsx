@@ -288,30 +288,30 @@ function EventSearchBar({
 
   if (selectedEvent) {
     return (
-      <div className="flex items-center gap-3 bg-white rounded-2xl px-5 py-3.5 max-w-xl mx-auto shadow-sm border border-gray-200">
-        <span className="text-lg">🎯</span>
-        <span className="text-sm font-bold text-gray-900 flex-1">{selectedEvent}</span>
+      <div className="flex items-center gap-3 rounded-xl px-4 py-2.5 border border-brand-200 bg-brand-50">
+        <span className="text-sm">🎯</span>
+        <span className="text-sm font-bold text-brand-700 flex-1">{selectedEvent}</span>
         <button
           onClick={onClear}
-          className="text-xs font-medium text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-gray-100 transition"
+          className="text-xs font-medium text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-white transition"
         >
-          Changer
+          ✕
         </button>
       </div>
     );
   }
 
   return (
-    <div ref={ref} className="relative max-w-xl mx-auto">
+    <div ref={ref} className="relative">
       <div className="relative">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => results.length > 0 && setIsOpen(true)}
           placeholder="Marathon de Paris, UTMB, Ironman..."
-          className="w-full bg-white rounded-2xl pl-12 pr-4 py-3.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
+          className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent focus:bg-white transition"
         />
         {loading && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -507,36 +507,34 @@ export default function ExploreProgramsPage() {
     <>
       <AppHeader title="Programmes" />
 
-      {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <div className="bg-gray-950 px-4 pt-8 pb-6">
-        <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-xl md:text-3xl font-extrabold text-white mb-1.5">
-            Prepare ton prochain objectif
-          </h1>
-          <p className="text-xs md:text-sm text-gray-400 mb-5">
-            Trouve le programme parfait pour ton evenement
-          </p>
-          <EventSearchBar
-            onSelect={handleSelectEvent}
-            selectedEvent={selectedEvent}
-            onClear={handleClearEvent}
-          />
-        </div>
-      </div>
-
-      {/* ── Events Carousel ─────────────────────────────────────────────── */}
-      <div className="bg-gray-900 px-4 py-4 border-t border-gray-800">
+      {/* ── Hero + Search + Carousel — all white/light ──────────────────── */}
+      <div className="px-4 pt-6 pb-4 border-b border-gray-100">
         <div className="max-w-5xl mx-auto">
+          {/* Title + search */}
+          <div className="max-w-xl mb-5">
+            <h1 className="text-xl md:text-2xl font-extrabold text-gray-900 mb-1">
+              Prepare ton prochain objectif
+            </h1>
+            <p className="text-sm text-gray-500 mb-4">
+              Trouve le programme parfait pour ton evenement
+            </p>
+            <EventSearchBar
+              onSelect={handleSelectEvent}
+              selectedEvent={selectedEvent}
+              onClear={handleClearEvent}
+            />
+          </div>
+
           {/* Category tabs */}
           <div className="flex gap-1.5 mb-3 overflow-x-auto scrollbar-hide">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.key}
                 onClick={() => setCarouselCategory(cat.key)}
-                className={`rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap transition ${
+                className={`rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition border ${
                   carouselCategory === cat.key
-                    ? 'bg-white text-gray-900'
-                    : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+                    ? 'bg-brand-500 text-white border-brand-500'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-brand-300 hover:text-brand-600'
                 }`}
               >
                 {cat.label}
@@ -544,7 +542,7 @@ export default function ExploreProgramsPage() {
             ))}
           </div>
 
-          {/* Cards */}
+          {/* Event cards — white bordered */}
           <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
             {filteredCarousel.map((ev) => {
               const isActive = selectedEvent === ev.name;
@@ -556,18 +554,25 @@ export default function ExploreProgramsPage() {
                   }
                   className={`flex-shrink-0 rounded-xl px-4 py-3 min-w-[150px] text-left transition-all border ${
                     isActive
-                      ? 'bg-brand-600 border-brand-400 text-white'
-                      : 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-750 hover:border-gray-600'
+                      ? 'bg-brand-50 border-brand-500 ring-1 ring-brand-200'
+                      : 'bg-white border-gray-200 hover:border-brand-300 hover:shadow-sm'
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-base">{ev.emoji}</span>
-                    <span className="text-xs font-bold truncate">{ev.name}</span>
+                    <span className={`text-xs font-bold truncate ${isActive ? 'text-brand-700' : 'text-gray-900'}`}>
+                      {ev.name}
+                    </span>
                   </div>
                   <div className="text-[10px] text-gray-400 space-x-2">
                     <span>{ev.date}</span>
                     <span>· {ev.location}</span>
                   </div>
+                  {isActive && (
+                    <span className="inline-block mt-1.5 text-[10px] font-bold text-brand-600 bg-brand-100 rounded-full px-2 py-0.5">
+                      ✓ Selectionne
+                    </span>
+                  )}
                 </button>
               );
             })}
