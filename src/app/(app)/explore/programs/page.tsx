@@ -3,10 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AppHeader } from '@/components/pulse/app-header';
 import { EmptyState } from '@/components/pulse/empty-state';
-import { Badge } from '@/components/pulse/badge';
 import { Skeleton } from '@/components/pulse/skeleton';
 import { useAuthStore } from '@/stores/auth';
-import { SPORT_EMOJIS, SPORT_LABELS, SPORTS, SPORT_GRADIENTS, type Sport } from '@/lib/sports';
+import { SPORT_EMOJIS, SPORT_LABELS, SPORTS, type Sport } from '@/lib/sports';
 import Link from 'next/link';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -21,7 +20,7 @@ interface Program {
   price: number;
   is_published: boolean;
   cover_image_url: string | null;
-  coach_profiles: { display_name: string; avatar_url: string | null } | null;
+  coach_profiles: { display_name: string } | null;
   program_enrollments: Array<{ count: number }>;
 }
 
@@ -38,16 +37,16 @@ interface EventResult {
 
 const LEVEL_LABELS: Record<string, string> = {
   all: 'Tous niveaux',
-  beginner: 'Débutant',
-  intermediate: 'Intermédiaire',
-  advanced: 'Avancé',
+  beginner: 'Debutant',
+  intermediate: 'Intermediaire',
+  advanced: 'Avance',
 };
 
 const SORT_OPTIONS = [
   { value: 'popular', label: 'Populaire' },
-  { value: 'recent', label: 'Récent' },
-  { value: 'price_asc', label: 'Prix croissant' },
-  { value: 'price_desc', label: 'Prix décroissant' },
+  { value: 'recent', label: 'Recent' },
+  { value: 'price_asc', label: 'Prix ↑' },
+  { value: 'price_desc', label: 'Prix ↓' },
 ];
 
 const DURATION_OPTIONS = [
@@ -59,179 +58,182 @@ const DURATION_OPTIONS = [
 
 const PAGE_SIZE = 12;
 
-// Popular events for the carousel
-const POPULAR_CAROUSEL_EVENTS: Array<{
-  name: string;
-  emoji: string;
-  sport: string;
-  date: string;
-  location: string;
-  category: string;
-}> = [
-  { name: 'Marathon de Paris', emoji: '🏃', sport: 'running', date: '11 avril 2027', location: 'Paris', category: 'marathon' },
-  { name: 'UTMB', emoji: '⛰️', sport: 'trail', date: '28 août 2026', location: 'Chamonix', category: 'trail' },
-  { name: 'Ironman France Nice', emoji: '🏊🚴🏃', sport: 'triathlon', date: '28 juin 2026', location: 'Nice', category: 'triathlon' },
-  { name: 'Semi-Marathon de Paris', emoji: '🏃', sport: 'running', date: '7 mars 2027', location: 'Paris', category: 'marathon' },
-  { name: 'Trail des Templiers', emoji: '⛰️', sport: 'trail', date: '18 oct 2026', location: 'Millau', category: 'trail' },
+// Popular events
+const POPULAR_EVENTS = [
+  { name: 'Marathon de Paris', emoji: '🏃', sport: 'running', date: '11 avr. 2027', location: 'Paris', category: 'marathon' },
+  { name: 'UTMB', emoji: '⛰️', sport: 'trail', date: '28 aout 2026', location: 'Chamonix', category: 'trail' },
+  { name: 'Ironman Nice', emoji: '🏊', sport: 'triathlon', date: '28 juin 2026', location: 'Nice', category: 'triathlon' },
+  { name: 'Semi de Paris', emoji: '🏃', sport: 'running', date: '7 mars 2027', location: 'Paris', category: 'marathon' },
+  { name: 'Trail des Templiers', emoji: '⛰️', sport: 'trail', date: '18 oct. 2026', location: 'Millau', category: 'trail' },
   { name: 'French Throwdown', emoji: '🏋️', sport: 'crossfit', date: '30 mai 2026', location: 'Paris', category: 'crossfit' },
-  { name: 'Marathon de Berlin', emoji: '🏃', sport: 'running', date: '27 sept 2026', location: 'Berlin', category: 'marathon' },
-  { name: 'Diagonale des Fous', emoji: '⛰️', sport: 'trail', date: '22 oct 2026', location: 'La Réunion', category: 'trail' },
-  { name: 'La Marmotte', emoji: '🚴', sport: 'cyclisme', date: '4 juil 2026', location: 'Alpe d\'Huez', category: 'cyclisme' },
-  { name: 'Spartan Race Paris', emoji: '🏋️', sport: 'crossfit', date: '9 mai 2026', location: 'Paris', category: 'crossfit' },
+  { name: 'Diagonale des Fous', emoji: '⛰️', sport: 'trail', date: '22 oct. 2026', location: 'La Reunion', category: 'trail' },
+  { name: 'La Marmotte', emoji: '🚴', sport: 'cyclisme', date: '4 juil. 2026', location: 'Alpe d\'Huez', category: 'cyclisme' },
+  { name: 'Spartan Race', emoji: '🏋️', sport: 'crossfit', date: '9 mai 2026', location: 'Paris', category: 'crossfit' },
+  { name: 'Marathon Berlin', emoji: '🏃', sport: 'running', date: '27 sept. 2026', location: 'Berlin', category: 'marathon' },
 ];
 
-const CATEGORY_FILTERS = [
-  { key: 'all', label: 'Tous', emoji: '🔥' },
-  { key: 'marathon', label: 'Marathons', emoji: '🏃' },
-  { key: 'trail', label: 'Trails', emoji: '⛰️' },
-  { key: 'triathlon', label: 'Triathlons', emoji: '🏊🚴🏃' },
-  { key: 'crossfit', label: 'CrossFit', emoji: '🏋️' },
-  { key: 'cyclisme', label: 'Cyclisme', emoji: '🚴' },
+const CATEGORIES = [
+  { key: 'all', label: 'Tous' },
+  { key: 'marathon', label: '🏃 Marathons' },
+  { key: 'trail', label: '⛰️ Trails' },
+  { key: 'triathlon', label: '🏊 Triathlons' },
+  { key: 'crossfit', label: '🏋️ CrossFit' },
+  { key: 'cyclisme', label: '🚴 Cyclisme' },
 ];
 
-function ProgramCardSkeleton() {
+// ── Skeletons ────────────────────────────────────────────────────────────────
+function CardSkeleton() {
   return (
-    <div className="rounded-2xl border border-border overflow-hidden bg-white">
-      <Skeleton className="h-36 rounded-none" />
-      <div className="p-4 space-y-2">
-        <Skeleton className="h-4 w-3/4" />
+    <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
+      <Skeleton className="h-2 rounded-none" />
+      <div className="p-4 space-y-3">
+        <Skeleton className="h-5 w-3/4" />
         <Skeleton className="h-3 w-1/2" />
         <Skeleton className="h-3 w-full" />
-        <div className="flex gap-1.5 pt-1">
-          <Skeleton className="h-5 w-16" />
-          <Skeleton className="h-5 w-16" />
+        <div className="flex gap-2 pt-1">
+          <Skeleton className="h-6 w-16 rounded-full" />
+          <Skeleton className="h-6 w-16 rounded-full" />
         </div>
-        <Skeleton className="h-9 w-full mt-2" />
+        <Skeleton className="h-10 w-full rounded-xl" />
       </div>
     </div>
   );
 }
 
+// ── Program Card ─────────────────────────────────────────────────────────────
 function ProgramCard({
   prog,
   isEnrolled,
   enrolling,
   onEnroll,
-  pushingGarmin,
-  garminConnected,
-  onPushGarmin,
   selectedEvent,
 }: {
   prog: Program;
   isEnrolled: boolean;
   enrolling: boolean;
   onEnroll: () => void;
-  pushingGarmin: boolean;
-  garminConnected: boolean;
-  onPushGarmin: () => void;
   selectedEvent: string | null;
 }) {
   const sportEmoji = SPORT_EMOJIS[prog.sport as Sport] || '⚡';
   const sportLabel = SPORT_LABELS[prog.sport as Sport] || prog.sport;
-  const gradient = SPORT_GRADIENTS[prog.sport as Sport] || SPORT_GRADIENTS['autre'];
   const enrollCount = prog.program_enrollments?.[0]?.count ?? 0;
   const coachName = prog.coach_profiles?.display_name || 'Coach';
-  const coachAvatar = prog.coach_profiles?.avatar_url;
 
-  // Check if program mentions the selected event
-  const matchesEvent = selectedEvent && (
-    prog.title.toLowerCase().includes(selectedEvent.toLowerCase()) ||
-    prog.description?.toLowerCase().includes(selectedEvent.toLowerCase())
-  );
+  const matchesEvent =
+    selectedEvent &&
+    (prog.title.toLowerCase().includes(selectedEvent.toLowerCase()) ||
+      prog.description?.toLowerCase().includes(selectedEvent.toLowerCase()));
+
+  // Sport accent color
+  const accentColors: Record<string, string> = {
+    running: '#3b82f6',
+    trail: '#10b981',
+    triathlon: '#0ea5e9',
+    crossfit: '#ef4444',
+    musculation: '#10b981',
+    cyclisme: '#14b8a6',
+    natation: '#0ea5e9',
+    yoga: '#8b5cf6',
+    boxe: '#f59e0b',
+    fitness: '#f97316',
+    pilates: '#a78bfa',
+    meditation: '#6366f1',
+  };
+  const accent = accentColors[prog.sport] || '#6b7280';
 
   return (
-    <Link href={`/explore/programs/${prog.id}`} className="group block rounded-2xl border border-border bg-white overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5">
-      {/* Cover */}
-      <div
-        className="relative h-36 flex items-end"
-        style={{ background: prog.cover_image_url ? undefined : gradient }}
-      >
-        {prog.cover_image_url && (
-          <img src={prog.cover_image_url} alt={prog.title} className="absolute inset-0 w-full h-full object-cover" />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+    <Link
+      href={`/explore/programs/${prog.id}`}
+      className="group block rounded-2xl border border-gray-200 bg-white overflow-hidden transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+    >
+      {/* Accent bar */}
+      <div className="h-1.5" style={{ background: accent }} />
 
+      <div className="p-4">
         {/* Event badge */}
         {matchesEvent && (
-          <div className="absolute top-2 left-2 z-20">
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/90 backdrop-blur-sm px-2.5 py-1 text-[10px] font-bold text-white shadow-sm">
+          <div className="mb-3">
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 text-amber-700 px-2.5 py-1 text-[11px] font-bold">
               🎯 {selectedEvent}
             </span>
           </div>
         )}
 
-        <div className="relative z-10 px-4 pb-3 flex items-end gap-3 w-full">
-          <span className="text-2xl drop-shadow">{sportEmoji}</span>
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-bold text-white drop-shadow truncate">{prog.title}</h3>
-            <p className="text-xs text-white/80 truncate">{prog.duration_weeks} semaines</p>
+        {/* Header: emoji + title */}
+        <div className="flex items-start gap-3 mb-3">
+          <div
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-lg shrink-0"
+            style={{ background: `${accent}15` }}
+          >
+            {sportEmoji}
           </div>
-          <div className="text-right">
-            {prog.price === 0 ? (
-              <span className="text-xs font-bold text-emerald-300 bg-black/30 rounded-full px-2 py-0.5">Gratuit</span>
-            ) : (
-              <span className="text-xs font-bold text-white bg-black/30 rounded-full px-2 py-0.5">{prog.price}€</span>
-            )}
+          <div className="min-w-0 flex-1">
+            <h3 className="text-sm font-bold text-gray-900 leading-tight line-clamp-2 group-hover:text-brand-600 transition-colors">
+              {prog.title}
+            </h3>
+            <p className="text-xs text-gray-500 mt-0.5">{sportLabel}</p>
           </div>
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="p-4">
-        {/* Coach */}
-        <div className="flex items-center gap-2 mb-2">
-          <div className="h-6 w-6 rounded-full bg-gradient-to-br from-brand-500 to-cyan-500 flex items-center justify-center overflow-hidden flex-shrink-0">
-            {coachAvatar ? (
-              <img src={coachAvatar} alt={coachName} className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-[10px] font-bold text-white">{coachName[0]?.toUpperCase()}</span>
-            )}
-          </div>
-          <span className="text-xs text-muted truncate">{coachName}</span>
-          {enrollCount > 0 && (
-            <span className="ml-auto text-[10px] text-muted flex-shrink-0">{enrollCount} inscrits</span>
-          )}
         </div>
 
         {/* Description */}
         {prog.description && (
-          <p className="text-xs text-muted mb-3 line-clamp-2">{prog.description}</p>
+          <p className="text-xs text-gray-500 mb-3 line-clamp-2 leading-relaxed">
+            {prog.description}
+          </p>
         )}
+
+        {/* Coach + enrollments */}
+        <div className="flex items-center gap-2 mb-3">
+          <div className="h-5 w-5 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
+            <span className="text-[9px] font-bold text-gray-500">
+              {coachName[0]?.toUpperCase()}
+            </span>
+          </div>
+          <span className="text-xs text-gray-500 truncate">{coachName}</span>
+          {enrollCount > 0 && (
+            <span className="ml-auto text-[10px] text-gray-400 shrink-0">
+              {enrollCount} inscrit{enrollCount > 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
 
         {/* Badges */}
         <div className="flex flex-wrap gap-1.5 mb-3">
-          <Badge variant="sport">{sportLabel}</Badge>
-          <Badge variant="info">{LEVEL_LABELS[prog.level] || prog.level}</Badge>
-          <Badge variant="success">{prog.duration_weeks} sem.</Badge>
+          <span className="text-[11px] font-medium bg-gray-100 text-gray-600 rounded-full px-2.5 py-0.5">
+            {LEVEL_LABELS[prog.level] || prog.level}
+          </span>
+          <span className="text-[11px] font-medium bg-gray-100 text-gray-600 rounded-full px-2.5 py-0.5">
+            {prog.duration_weeks} sem.
+          </span>
+          <span
+            className={`text-[11px] font-bold rounded-full px-2.5 py-0.5 ${
+              prog.price === 0
+                ? 'bg-emerald-100 text-emerald-700'
+                : 'bg-amber-100 text-amber-700'
+            }`}
+          >
+            {prog.price === 0 ? 'Gratuit' : `${prog.price} €`}
+          </span>
         </div>
 
         {/* CTA */}
-        <div
-          className="space-y-2"
-          onClick={(e) => e.preventDefault()}
-        >
+        <div onClick={(e) => e.preventDefault()}>
           {isEnrolled ? (
-            <>
-              <div className="rounded-xl bg-green-50 py-2 text-center text-sm font-semibold text-green-700">
-                ✓ Inscrit
-              </div>
-              {garminConnected && (
-                <button
-                  onClick={onPushGarmin}
-                  disabled={pushingGarmin}
-                  className="w-full rounded-xl border border-blue-200 bg-blue-50 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 disabled:opacity-50"
-                >
-                  {pushingGarmin ? 'Envoi...' : '⌚ Envoyer sur ma Garmin'}
-                </button>
-              )}
-            </>
+            <div className="rounded-xl bg-emerald-50 border border-emerald-200 py-2.5 text-center text-sm font-semibold text-emerald-700">
+              ✓ Inscrit
+            </div>
           ) : (
             <button
               onClick={onEnroll}
               disabled={enrolling}
-              className="w-full rounded-xl bg-brand-500 py-2 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:opacity-50"
+              className="w-full rounded-xl py-2.5 text-sm font-semibold text-white transition disabled:opacity-50"
+              style={{ background: accent }}
             >
-              {enrolling ? 'Inscription...' : prog.price > 0 ? `Acheter ${prog.price}€` : "S'inscrire"}
+              {enrolling
+                ? 'Inscription...'
+                : prog.price > 0
+                  ? `Acheter ${prog.price} €`
+                  : "S'inscrire"}
             </button>
           )}
         </div>
@@ -240,6 +242,7 @@ function ProgramCard({
   );
 }
 
+// ── Event Search Bar ─────────────────────────────────────────────────────────
 function EventSearchBar({
   onSelect,
   selectedEvent,
@@ -256,7 +259,10 @@ function EventSearchBar({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (query.length < 2) { setResults([]); return; }
+    if (query.length < 2) {
+      setResults([]);
+      return;
+    }
     setLoading(true);
     const t = setTimeout(async () => {
       try {
@@ -264,7 +270,9 @@ function EventSearchBar({
         const data = await res.json();
         setResults(Array.isArray(data) ? data : []);
         setIsOpen(true);
-      } catch { setResults([]); }
+      } catch {
+        setResults([]);
+      }
       setLoading(false);
     }, 250);
     return () => clearTimeout(t);
@@ -280,12 +288,12 @@ function EventSearchBar({
 
   if (selectedEvent) {
     return (
-      <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl px-4 py-3 md:py-4 max-w-2xl mx-auto">
+      <div className="flex items-center gap-3 bg-white rounded-2xl px-5 py-3.5 max-w-xl mx-auto shadow-sm border border-gray-200">
         <span className="text-lg">🎯</span>
-        <span className="text-sm md:text-base font-semibold text-white flex-1">{selectedEvent}</span>
+        <span className="text-sm font-bold text-gray-900 flex-1">{selectedEvent}</span>
         <button
           onClick={onClear}
-          className="text-white/60 hover:text-white text-sm font-medium px-2 py-1 rounded-lg hover:bg-white/10 transition"
+          className="text-xs font-medium text-gray-400 hover:text-red-500 px-2 py-1 rounded-lg hover:bg-gray-100 transition"
         >
           Changer
         </button>
@@ -294,56 +302,62 @@ function EventSearchBar({
   }
 
   return (
-    <div ref={ref} className="relative max-w-2xl mx-auto">
+    <div ref={ref} className="relative max-w-xl mx-auto">
       <div className="relative">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">🔍</span>
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
         <input
           type="text"
           value={query}
-          onChange={e => setQuery(e.target.value)}
+          onChange={(e) => setQuery(e.target.value)}
           onFocus={() => results.length > 0 && setIsOpen(true)}
-          placeholder="Rechercher un événement... (Marathon de Paris, UTMB, Ironman...)"
-          className="w-full bg-white/10 backdrop-blur-sm border border-white/20 text-white placeholder:text-white/50 rounded-2xl pl-12 pr-4 py-3.5 md:py-4 text-sm md:text-base focus:outline-none focus:ring-2 focus:ring-brand-400/50 focus:border-brand-400/50 transition"
+          placeholder="Marathon de Paris, UTMB, Ironman..."
+          className="w-full bg-white rounded-2xl pl-12 pr-4 py-3.5 text-sm text-gray-900 placeholder:text-gray-400 shadow-sm border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent transition"
         />
         {loading && (
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-brand-500" />
           </div>
         )}
       </div>
 
       {isOpen && results.length > 0 && (
-        <div className="absolute top-full mt-2 w-full bg-white rounded-2xl shadow-2xl border border-border overflow-hidden z-50 max-h-80 overflow-y-auto">
-          {results.map((ev, i) => {
-            const sportEmoji = SPORT_EMOJIS[ev.sport as Sport] || '⚡';
-            return (
-              <button
-                key={`${ev.name}-${i}`}
-                onClick={() => {
-                  onSelect(ev);
-                  setQuery('');
-                  setIsOpen(false);
-                }}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface transition-colors text-left border-b border-border/50 last:border-0"
-              >
-                <span className="text-xl flex-shrink-0">{sportEmoji}</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-text truncate">{ev.name}</p>
-                  <p className="text-xs text-muted truncate">
-                    {ev.location}
-                    {ev.distanceKm ? ` · ${ev.distanceKm} km` : ''}
-                    {ev.date ? ` · ${new Date(ev.date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
+        <div className="absolute top-full mt-2 w-full bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden z-50 max-h-72 overflow-y-auto">
+          {results.map((ev, i) => (
+            <button
+              key={`${ev.name}-${i}`}
+              onClick={() => {
+                onSelect(ev);
+                setQuery('');
+                setIsOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-100 last:border-0"
+            >
+              <span className="text-lg shrink-0">
+                {SPORT_EMOJIS[ev.sport as Sport] || '⚡'}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900 truncate">{ev.name}</p>
+                <p className="text-xs text-gray-500 truncate">
+                  {ev.location}
+                  {ev.distanceKm ? ` · ${ev.distanceKm} km` : ''}
+                  {ev.date
+                    ? ` · ${new Date(ev.date).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      })}`
+                    : ''}
+                </p>
+              </div>
+            </button>
+          ))}
         </div>
       )}
     </div>
   );
 }
 
+// ── Main Page ────────────────────────────────────────────────────────────────
 export default function ExploreProgramsPage() {
   const { userId } = useAuthStore();
 
@@ -355,8 +369,6 @@ export default function ExploreProgramsPage() {
 
   const [enrolling, setEnrolling] = useState<string | null>(null);
   const [enrolled, setEnrolled] = useState<Set<string>>(new Set());
-  const [pushingGarmin, setPushingGarmin] = useState<string | null>(null);
-  const [garminConnected, setGarminConnected] = useState(false);
 
   // Event filter
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
@@ -366,14 +378,11 @@ export default function ExploreProgramsPage() {
   // Filters
   const [search, setSearch] = useState('');
   const [searchInput, setSearchInput] = useState('');
-  const [selectedSports, setSelectedSports] = useState<Sport[]>([]);
   const [selectedLevel, setSelectedLevel] = useState('all');
   const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
   const [priceFilter, setPriceFilter] = useState<'all' | 'free' | 'paid'>('all');
   const [sort, setSort] = useState('popular');
   const [showFilters, setShowFilters] = useState(false);
-
-  const carouselRef = useRef<HTMLDivElement>(null);
 
   // Search debounce
   useEffect(() => {
@@ -381,36 +390,30 @@ export default function ExploreProgramsPage() {
     return () => clearTimeout(t);
   }, [searchInput]);
 
-  // Garmin check
-  useEffect(() => {
-    fetch('/api/connectors')
-      .then(r => r.ok ? r.json() : { connections: [] })
-      .then(d => {
-        const conns = d.connections || [];
-        setGarminConnected(conns.some((c: any) => c.provider === 'garmin' && c.is_active));
-      })
-      .catch(() => {});
-  }, []);
-
-  const buildUrl = useCallback((pageOffset: number) => {
-    const p = new URLSearchParams();
-    p.set('sort', sort);
-    p.set('limit', String(PAGE_SIZE));
-    p.set('offset', String(pageOffset));
-    if (search) p.set('search', search);
-    if (selectedEvent) p.set('event', selectedEvent);
-    if (selectedEventSport && !selectedSports.length) p.set('sport', selectedEventSport);
-    if (selectedSports.length === 1) p.set('sport', selectedSports[0]);
-    if (selectedLevel !== 'all') p.set('level', selectedLevel);
-    if (selectedDuration !== null) {
-      const dur = DURATION_OPTIONS[selectedDuration];
-      p.set('min_duration', String(dur.min));
-      if (dur.max) p.set('max_duration', String(dur.max));
-    }
-    if (priceFilter === 'free') { p.set('min_price', '0'); p.set('max_price', '0'); }
-    if (priceFilter === 'paid') p.set('min_price', '0.01');
-    return `/api/programs?${p.toString()}`;
-  }, [search, selectedEvent, selectedEventSport, selectedSports, selectedLevel, selectedDuration, priceFilter, sort]);
+  const buildUrl = useCallback(
+    (pageOffset: number) => {
+      const p = new URLSearchParams();
+      p.set('sort', sort);
+      p.set('limit', String(PAGE_SIZE));
+      p.set('offset', String(pageOffset));
+      if (search) p.set('search', search);
+      if (selectedEvent) p.set('event', selectedEvent);
+      if (selectedEventSport) p.set('sport', selectedEventSport);
+      if (selectedLevel !== 'all') p.set('level', selectedLevel);
+      if (selectedDuration !== null) {
+        const dur = DURATION_OPTIONS[selectedDuration];
+        p.set('min_duration', String(dur.min));
+        if (dur.max) p.set('max_duration', String(dur.max));
+      }
+      if (priceFilter === 'free') {
+        p.set('min_price', '0');
+        p.set('max_price', '0');
+      }
+      if (priceFilter === 'paid') p.set('min_price', '0.01');
+      return `/api/programs?${p.toString()}`;
+    },
+    [search, selectedEvent, selectedEventSport, selectedLevel, selectedDuration, priceFilter, sort]
+  );
 
   const fetchPrograms = useCallback(async () => {
     setLoading(true);
@@ -439,10 +442,12 @@ export default function ExploreProgramsPage() {
       const res = await fetch(buildUrl(newOffset));
       const data = res.ok ? await res.json() : [];
       const list = Array.isArray(data) ? data : [];
-      setPrograms(prev => [...prev, ...list]);
+      setPrograms((prev) => [...prev, ...list]);
       setOffset(newOffset);
       setHasMore(list.length === PAGE_SIZE);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     setLoadingMore(false);
   };
 
@@ -456,24 +461,12 @@ export default function ExploreProgramsPage() {
         body: JSON.stringify({}),
       });
       if (res.ok || res.status === 409) {
-        setEnrolled(prev => new Set(prev).add(programId));
+        setEnrolled((prev) => new Set(prev).add(programId));
       }
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     setEnrolling(null);
-  };
-
-  const handlePushGarmin = async (programId: string) => {
-    setPushingGarmin(programId);
-    try {
-      const res = await fetch(`/api/programs/${programId}/push-garmin`, { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
-        alert(`${data.pushed} séances envoyées sur votre Garmin !`);
-      } else {
-        alert(data.error || 'Erreur');
-      }
-    } catch { /* ignore */ }
-    setPushingGarmin(null);
   };
 
   const handleSelectEvent = (ev: EventResult) => {
@@ -481,7 +474,7 @@ export default function ExploreProgramsPage() {
     setSelectedEventSport(ev.sport);
   };
 
-  const handleSelectCarouselEvent = (ev: typeof POPULAR_CAROUSEL_EVENTS[0]) => {
+  const handleSelectCarouselEvent = (ev: (typeof POPULAR_EVENTS)[0]) => {
     setSelectedEvent(ev.name);
     setSelectedEventSport(ev.sport);
   };
@@ -491,27 +484,18 @@ export default function ExploreProgramsPage() {
     setSelectedEventSport(null);
   };
 
-  const toggleSport = (sport: Sport) => {
-    setSelectedSports(prev =>
-      prev.includes(sport) ? prev.filter(s => s !== sport) : [...prev, sport]
-    );
-  };
+  const filteredCarousel =
+    carouselCategory === 'all'
+      ? POPULAR_EVENTS
+      : POPULAR_EVENTS.filter((e) => e.category === carouselCategory);
 
-  // Active filter count
-  const activeFilters: string[] = [];
-  if (search) activeFilters.push(`"${search}"`);
-  if (selectedEvent) activeFilters.push(`🎯 ${selectedEvent}`);
-  selectedSports.forEach(s => activeFilters.push(SPORT_LABELS[s]));
-  if (selectedLevel !== 'all') activeFilters.push(LEVEL_LABELS[selectedLevel]);
-  if (selectedDuration !== null) activeFilters.push(DURATION_OPTIONS[selectedDuration].label);
-  if (priceFilter !== 'all') activeFilters.push(priceFilter === 'free' ? 'Gratuit' : 'Payant');
+  const hasFilters = search || selectedLevel !== 'all' || selectedDuration !== null || priceFilter !== 'all';
 
   const clearFilters = () => {
     setSearchInput('');
     setSearch('');
     setSelectedEvent(null);
     setSelectedEventSport(null);
-    setSelectedSports([]);
     setSelectedLevel('all');
     setSelectedDuration(null);
     setPriceFilter('all');
@@ -519,24 +503,19 @@ export default function ExploreProgramsPage() {
     setCarouselCategory('all');
   };
 
-  const filteredCarouselEvents = carouselCategory === 'all'
-    ? POPULAR_CAROUSEL_EVENTS
-    : POPULAR_CAROUSEL_EVENTS.filter(e => e.category === carouselCategory);
-
   return (
     <>
       <AppHeader title="Programmes" />
 
-      {/* Hero Section */}
-      <div className="bg-gradient-to-b from-gray-950 via-gray-900 to-gray-800 px-4 pt-8 pb-10 md:pt-12 md:pb-14">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-2xl md:text-4xl font-extrabold text-white mb-2 tracking-tight">
-            Prépare ton prochain objectif
+      {/* ── Hero ────────────────────────────────────────────────────────── */}
+      <div className="bg-gray-950 px-4 pt-8 pb-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <h1 className="text-xl md:text-3xl font-extrabold text-white mb-1.5">
+            Prepare ton prochain objectif
           </h1>
-          <p className="text-sm md:text-base text-white/60 mb-6 md:mb-8 max-w-lg mx-auto">
-            Trouve le programme d&apos;entraînement parfait pour ton événement
+          <p className="text-xs md:text-sm text-gray-400 mb-5">
+            Trouve le programme parfait pour ton evenement
           </p>
-
           <EventSearchBar
             onSelect={handleSelectEvent}
             selectedEvent={selectedEvent}
@@ -545,55 +524,50 @@ export default function ExploreProgramsPage() {
         </div>
       </div>
 
-      {/* Popular Events Carousel */}
-      <div className="bg-gray-800 border-t border-white/5 px-4 py-6">
-        <div className="max-w-7xl mx-auto">
+      {/* ── Events Carousel ─────────────────────────────────────────────── */}
+      <div className="bg-gray-900 px-4 py-4 border-t border-gray-800">
+        <div className="max-w-5xl mx-auto">
           {/* Category tabs */}
-          <div className="flex items-center gap-1.5 mb-4 overflow-x-auto pb-1 scrollbar-hide">
-            {CATEGORY_FILTERS.map(cat => (
+          <div className="flex gap-1.5 mb-3 overflow-x-auto scrollbar-hide">
+            {CATEGORIES.map((cat) => (
               <button
                 key={cat.key}
                 onClick={() => setCarouselCategory(cat.key)}
-                className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all ${
+                className={`rounded-full px-3 py-1 text-xs font-semibold whitespace-nowrap transition ${
                   carouselCategory === cat.key
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'bg-white/10 text-white/70 hover:bg-white/20 hover:text-white'
+                    ? 'bg-white text-gray-900'
+                    : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
                 }`}
               >
-                <span>{cat.emoji}</span>
                 {cat.label}
               </button>
             ))}
           </div>
 
-          {/* Carousel */}
-          <div
-            ref={carouselRef}
-            className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide snap-x snap-mandatory"
-          >
-            {filteredCarouselEvents.map((ev) => {
+          {/* Cards */}
+          <div className="flex gap-2.5 overflow-x-auto scrollbar-hide pb-1">
+            {filteredCarousel.map((ev) => {
               const isActive = selectedEvent === ev.name;
-              const sportGrad = SPORT_GRADIENTS[ev.sport as Sport] || SPORT_GRADIENTS['autre'];
               return (
                 <button
                   key={ev.name}
-                  onClick={() => isActive ? handleClearEvent() : handleSelectCarouselEvent(ev)}
-                  className={`flex-shrink-0 snap-start rounded-2xl p-4 min-w-[180px] md:min-w-[200px] text-left transition-all duration-200 border ${
+                  onClick={() =>
+                    isActive ? handleClearEvent() : handleSelectCarouselEvent(ev)
+                  }
+                  className={`flex-shrink-0 rounded-xl px-4 py-3 min-w-[150px] text-left transition-all border ${
                     isActive
-                      ? 'border-brand-400 ring-2 ring-brand-400/30 shadow-lg shadow-brand-500/20'
-                      : 'border-white/10 hover:border-white/30 hover:shadow-md'
+                      ? 'bg-brand-600 border-brand-400 text-white'
+                      : 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-750 hover:border-gray-600'
                   }`}
-                  style={{ background: sportGrad }}
                 >
-                  <span className="text-2xl block mb-2">{ev.emoji}</span>
-                  <p className="text-sm font-bold text-white leading-tight mb-1 line-clamp-2">{ev.name}</p>
-                  <p className="text-[11px] text-white/70">{ev.date}</p>
-                  <p className="text-[11px] text-white/60">{ev.location}</p>
-                  {isActive && (
-                    <span className="inline-block mt-2 text-[10px] font-bold text-white bg-white/20 rounded-full px-2 py-0.5">
-                      ✓ Sélectionné
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-base">{ev.emoji}</span>
+                    <span className="text-xs font-bold truncate">{ev.name}</span>
+                  </div>
+                  <div className="text-[10px] text-gray-400 space-x-2">
+                    <span>{ev.date}</span>
+                    <span>· {ev.location}</span>
+                  </div>
                 </button>
               );
             })}
@@ -601,214 +575,178 @@ export default function ExploreProgramsPage() {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="p-4 md:p-8 pb-24 max-w-7xl mx-auto bg-surface min-h-screen">
-        {/* Header row */}
+      {/* ── Main Content ────────────────────────────────────────────────── */}
+      <div className="p-4 md:p-6 pb-24 max-w-5xl mx-auto">
+        {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <h2 className="text-lg md:text-xl font-extrabold text-text">
-              {selectedEvent ? 'Programmes recommandés' : 'Tous les programmes'}
+          <div className="flex items-center gap-2">
+            <h2 className="text-base md:text-lg font-bold text-gray-900">
+              {selectedEvent ? 'Programmes recommandes' : 'Tous les programmes'}
             </h2>
             {!loading && (
-              <span className="text-xs text-muted bg-white rounded-full px-2 py-0.5 border border-border">
-                {programs.length} résultat{programs.length !== 1 ? 's' : ''}
+              <span className="text-[11px] text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
+                {programs.length}
               </span>
             )}
           </div>
           <div className="flex items-center gap-2">
+            {/* Filter toggle */}
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className={`flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-medium border transition-colors ${
-                showFilters || activeFilters.length > 0
-                  ? 'bg-brand-50 text-brand-700 border-brand-200'
-                  : 'bg-white text-muted border-border hover:border-brand-300'
+              className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium border transition ${
+                hasFilters
+                  ? 'border-brand-300 bg-brand-50 text-brand-600'
+                  : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
               }`}
             >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
               </svg>
               Filtres
-              {activeFilters.length > 0 && (
-                <span className="bg-brand-500 text-white rounded-full w-4 h-4 text-[10px] font-bold flex items-center justify-center">
-                  {activeFilters.length}
-                </span>
+              {hasFilters && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    clearFilters();
+                  }}
+                  className="ml-1 text-[10px] text-brand-400 hover:text-red-500"
+                >
+                  ✕
+                </button>
               )}
             </button>
+
+            {/* Sort */}
             <select
               value={sort}
-              onChange={e => setSort(e.target.value)}
-              className="rounded-xl border border-border bg-white px-3 py-2 text-xs text-text focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+              onChange={(e) => setSort(e.target.value)}
+              className="rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-600 focus:outline-none focus:ring-1 focus:ring-brand-500"
             >
-              {SORT_OPTIONS.map(o => (
-                <option key={o.value} value={o.value}>{o.label}</option>
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
               ))}
             </select>
           </div>
         </div>
 
-        {/* Collapsible filters */}
+        {/* Expanded filters */}
         {showFilters && (
-          <div className="mb-4 p-4 rounded-2xl border border-border bg-white space-y-3 animate-in slide-in-from-top-2 duration-200">
+          <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 space-y-4">
             {/* Search */}
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted text-sm">🔍</span>
-              <input
-                type="text"
-                placeholder="Rechercher un programme..."
-                value={searchInput}
-                onChange={e => setSearchInput(e.target.value)}
-                className="w-full rounded-xl border border-border bg-surface pl-9 pr-4 py-2.5 text-sm text-text placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-brand-500/30"
-              />
-              {searchInput && (
-                <button
-                  onClick={() => setSearchInput('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-text"
-                >
-                  ×
-                </button>
-              )}
-            </div>
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Rechercher par nom..."
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
 
-            {/* Sport chips */}
+            {/* Level */}
             <div>
-              <p className="text-xs font-semibold text-muted mb-1.5">Sport</p>
+              <label className="text-xs font-medium text-gray-500 mb-1.5 block">Niveau</label>
               <div className="flex flex-wrap gap-1.5">
-                {SPORTS.map(sport => (
+                {Object.entries(LEVEL_LABELS).map(([val, label]) => (
                   <button
-                    key={sport}
-                    onClick={() => toggleSport(sport)}
-                    className={`flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium border transition-colors ${
-                      selectedSports.includes(sport)
-                        ? 'bg-brand-500 text-white border-brand-500'
-                        : 'bg-surface text-muted border-border hover:border-brand-400 hover:text-text'
+                    key={val}
+                    onClick={() => setSelectedLevel(val)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                      selectedLevel === val
+                        ? 'bg-brand-500 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    <span>{SPORT_EMOJIS[sport]}</span>
-                    {SPORT_LABELS[sport]}
+                    {label}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Level + Duration + Price in a row */}
-            <div className="flex flex-wrap gap-4">
-              <div>
-                <p className="text-xs font-semibold text-muted mb-1.5">Niveau</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {['all', 'beginner', 'intermediate', 'advanced'].map(lvl => (
-                    <button
-                      key={lvl}
-                      onClick={() => setSelectedLevel(lvl)}
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium border transition-colors ${
-                        selectedLevel === lvl
-                          ? 'bg-violet-500 text-white border-violet-500'
-                          : 'bg-surface text-muted border-border hover:border-violet-400'
-                      }`}
-                    >
-                      {LEVEL_LABELS[lvl]}
-                    </button>
-                  ))}
-                </div>
+            {/* Duration */}
+            <div>
+              <label className="text-xs font-medium text-gray-500 mb-1.5 block">Duree</label>
+              <div className="flex flex-wrap gap-1.5">
+                {DURATION_OPTIONS.map((d, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedDuration(selectedDuration === i ? null : i)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                      selectedDuration === i
+                        ? 'bg-brand-500 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {d.label}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <div>
-                <p className="text-xs font-semibold text-muted mb-1.5">Durée</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {DURATION_OPTIONS.map((dur, idx) => (
-                    <button
-                      key={dur.label}
-                      onClick={() => setSelectedDuration(selectedDuration === idx ? null : idx)}
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium border transition-colors ${
-                        selectedDuration === idx
-                          ? 'bg-cyan-500 text-white border-cyan-500'
-                          : 'bg-surface text-muted border-border hover:border-cyan-400'
-                      }`}
-                    >
-                      {dur.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold text-muted mb-1.5">Prix</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {(['all', 'free', 'paid'] as const).map(p => (
-                    <button
-                      key={p}
-                      onClick={() => setPriceFilter(p)}
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium border transition-colors ${
-                        priceFilter === p
-                          ? 'bg-emerald-500 text-white border-emerald-500'
-                          : 'bg-surface text-muted border-border hover:border-emerald-400'
-                      }`}
-                    >
-                      {p === 'all' ? 'Tout prix' : p === 'free' ? 'Gratuit' : 'Payant'}
-                    </button>
-                  ))}
-                </div>
+            {/* Price */}
+            <div>
+              <label className="text-xs font-medium text-gray-500 mb-1.5 block">Prix</label>
+              <div className="flex gap-1.5">
+                {(['all', 'free', 'paid'] as const).map((v) => (
+                  <button
+                    key={v}
+                    onClick={() => setPriceFilter(v)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                      priceFilter === v
+                        ? 'bg-brand-500 text-white'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {v === 'all' ? 'Tous' : v === 'free' ? 'Gratuit' : 'Payant'}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        {/* Active filters */}
-        {activeFilters.length > 0 && (
-          <div className="flex items-center gap-2 mb-4 flex-wrap">
-            <span className="text-xs text-muted">Filtres :</span>
-            {activeFilters.map(f => (
-              <span key={f} className="flex items-center gap-1 rounded-full bg-brand-50 text-brand-700 text-xs px-2.5 py-0.5 font-medium border border-brand-100">
-                {f}
-              </span>
-            ))}
-            <button onClick={clearFilters} className="text-xs text-muted hover:text-text underline ml-1">
-              Tout effacer
-            </button>
-          </div>
-        )}
-
-        {/* Results */}
+        {/* Grid */}
         {loading ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {Array.from({ length: 6 }).map((_, i) => (
-              <ProgramCardSkeleton key={i} />
+              <CardSkeleton key={i} />
             ))}
           </div>
         ) : programs.length === 0 ? (
           <EmptyState
-            icon="📝"
-            title={selectedEvent ? `Aucun programme pour "${selectedEvent}"` : "Aucun programme trouvé"}
-            description={selectedEvent
-              ? "Aucun programme ne cible cet événement pour l'instant. Essayez un autre événement ou explorez tous les programmes."
-              : "Essayez de modifier vos filtres ou revenez plus tard."
+            title="Aucun programme trouve"
+            description={
+              hasFilters || selectedEvent
+                ? 'Essayez de modifier vos filtres'
+                : 'Revenez bientot pour decouvrir de nouveaux programmes'
             }
-            actionLabel={activeFilters.length > 0 ? 'Effacer les filtres' : undefined}
-            onAction={activeFilters.length > 0 ? clearFilters : undefined}
+            action={
+              hasFilters || selectedEvent
+                ? { label: 'Effacer les filtres', onClick: clearFilters }
+                : undefined
+            }
           />
         ) : (
           <>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {programs.map(prog => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {programs.map((prog) => (
                 <ProgramCard
                   key={prog.id}
                   prog={prog}
                   isEnrolled={enrolled.has(prog.id)}
                   enrolling={enrolling === prog.id}
                   onEnroll={() => handleEnroll(prog.id)}
-                  pushingGarmin={pushingGarmin === prog.id}
-                  garminConnected={garminConnected}
-                  onPushGarmin={() => handlePushGarmin(prog.id)}
                   selectedEvent={selectedEvent}
                 />
               ))}
             </div>
 
             {hasMore && (
-              <div className="mt-8 flex justify-center">
+              <div className="text-center mt-6">
                 <button
                   onClick={loadMore}
                   disabled={loadingMore}
-                  className="rounded-xl border border-border bg-white px-6 py-2.5 text-sm font-semibold text-text transition hover:bg-surface disabled:opacity-50"
+                  className="rounded-xl border border-gray-200 bg-white px-6 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition disabled:opacity-50"
                 >
                   {loadingMore ? 'Chargement...' : 'Charger plus'}
                 </button>
