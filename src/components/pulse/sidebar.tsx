@@ -11,6 +11,7 @@ type NavItem = { href: string; icon: string; label: string };
 const athleteNav: NavItem[] = [
   { href: '/dashboard', icon: '🏠', label: 'Dashboard' },
   { href: '/planning', icon: '📅', label: 'Mon planning' },
+  { href: '/programs', icon: '📝', label: 'Mes programmes' },
   { href: '/progress', icon: '📊', label: 'Mes progrès' },
   { href: '/goals', icon: '🎯', label: 'Objectifs' },
   { href: '/nutrition', icon: '🥗', label: 'Nutrition' },

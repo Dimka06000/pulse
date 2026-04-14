@@ -7,11 +7,22 @@ export async function GET(req: NextRequest) {
   const params = req.nextUrl.searchParams;
 
   try {
-    let query = supabase.from('training_programs').select('*, coach_profiles(display_name)');
+    let query = supabase.from('training_programs').select(
+      '*, coach_profiles(display_name), program_enrollments(count)'
+    );
 
     let coachId = params.get('coach_id');
     const published = params.get('published');
     const sport = params.get('sport');
+    const search = params.get('search');
+    const level = params.get('level');
+    const minDuration = params.get('min_duration');
+    const maxDuration = params.get('max_duration');
+    const minPrice = params.get('min_price');
+    const maxPrice = params.get('max_price');
+    const sort = params.get('sort') || 'recent';
+    const limit = parseInt(params.get('limit') || '30');
+    const offset = parseInt(params.get('offset') || '0');
 
     // Handle "mine" — resolve to actual coach profile ID
     if (coachId === 'mine') {
@@ -28,19 +39,64 @@ export async function GET(req: NextRequest) {
     if (coachId) {
       query = query.eq('coach_id', coachId);
     }
-    if (published === 'true') {
+
+    // Default to published=true for marketplace view (no coach_id filter)
+    if (published === 'true' || (!coachId && published !== 'false')) {
       query = query.eq('is_published', true);
     }
+
     if (sport) {
       query = query.eq('sport', sport);
     }
 
-    query = query.order('created_at', { ascending: false });
+    if (search) {
+      query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+    }
+
+    if (level && level !== 'all') {
+      query = query.eq('level', level);
+    }
+
+    if (minDuration) {
+      query = query.gte('duration_weeks', parseInt(minDuration));
+    }
+    if (maxDuration) {
+      query = query.lte('duration_weeks', parseInt(maxDuration));
+    }
+
+    if (minPrice !== null && minPrice !== '') {
+      query = query.gte('price', parseFloat(minPrice));
+    }
+    if (maxPrice !== null && maxPrice !== '') {
+      query = query.lte('price', parseFloat(maxPrice));
+    }
+
+    // Sort
+    if (sort === 'price_asc') {
+      query = query.order('price', { ascending: true });
+    } else if (sort === 'price_desc') {
+      query = query.order('price', { ascending: false });
+    } else {
+      // recent and popular both order by created_at first; popular will be re-sorted client-side
+      query = query.order('created_at', { ascending: false });
+    }
+
+    query = query.range(offset, offset + limit - 1);
 
     const { data, error } = await query;
     if (error) throw error;
 
-    return NextResponse.json(data);
+    // For popular sort, sort by enrollment count
+    let result = data || [];
+    if (sort === 'popular') {
+      result = [...result].sort((a, b) => {
+        const aCount = Array.isArray(a.program_enrollments) ? a.program_enrollments[0]?.count || 0 : 0;
+        const bCount = Array.isArray(b.program_enrollments) ? b.program_enrollments[0]?.count || 0 : 0;
+        return bCount - aCount;
+      });
+    }
+
+    return NextResponse.json(result);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : 'Erreur serveur';
     return NextResponse.json({ error: message }, { status: 500 });

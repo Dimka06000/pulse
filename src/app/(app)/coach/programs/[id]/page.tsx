@@ -68,6 +68,11 @@ export default function ProgramDetailPage() {
   // Inline delete confirmation
   const [confirmDeleteProgram, setConfirmDeleteProgram] = useState(false);
 
+  // Marketplace panel
+  const [showMarketplace, setShowMarketplace] = useState(false);
+  const [priceInput, setPriceInput] = useState<string>('');
+  const [savingPrice, setSavingPrice] = useState(false);
+
   // AI generate
   const [showGenerateConfirm, setShowGenerateConfirm] = useState(false);
   const [generateLevel, setGenerateLevel] = useState<string>('intermediate');
@@ -108,15 +113,40 @@ export default function ProgramDetailPage() {
 
   const togglePublish = async () => {
     if (!program) return;
+    // Validate at least 1 workout before publishing
+    if (!program.is_published && (!program.program_workouts || program.program_workouts.length === 0)) {
+      toast('error', 'Impossible de publier', 'Ajoutez au moins une séance avant de publier ce programme.');
+      return;
+    }
     const res = await fetch(`/api/programs/${id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ is_published: !program.is_published }),
     });
     if (res.ok) {
-      toast('success', program.is_published ? 'Dépublié' : 'Publié !', '');
+      toast('success', program.is_published ? 'Dépublié' : 'Publié sur le marketplace !', '');
       fetchProgram();
     }
+  };
+
+  const savePrice = async () => {
+    if (!program) return;
+    const price = parseFloat(priceInput);
+    if (isNaN(price) || price < 0) {
+      toast('error', 'Prix invalide', 'Entrez un montant valide (0 pour gratuit)');
+      return;
+    }
+    setSavingPrice(true);
+    const res = await fetch(`/api/programs/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ price }),
+    });
+    if (res.ok) {
+      toast('success', 'Prix mis à jour', price === 0 ? 'Programme gratuit' : `${price}€`);
+      fetchProgram();
+    }
+    setSavingPrice(false);
   };
 
   const handleDelete = async () => {
@@ -284,8 +314,8 @@ export default function ProgramDetailPage() {
             <Button size="sm" variant="secondary" onClick={handleAutoPeriodize}>
               Auto-périodiser
             </Button>
-            <Button size="sm" variant={program.is_published ? 'secondary' : 'primary'} onClick={togglePublish}>
-              {program.is_published ? 'Dépublier' : 'Publier'}
+            <Button size="sm" variant={program.is_published ? 'secondary' : 'primary'} onClick={() => setShowMarketplace(!showMarketplace)}>
+              {program.is_published ? '✓ Publié' : '🏪 Marketplace'}
             </Button>
             <Button size="sm" variant="dark" onClick={() => setShowAssign(!showAssign)}>
               Assigner
@@ -339,6 +369,105 @@ export default function ProgramDetailPage() {
                 </>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Marketplace panel */}
+        {showMarketplace && (
+          <div className="mb-6 rounded-2xl border border-border bg-white p-4">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="font-semibold text-text">Publier sur le marketplace</h4>
+              {program.is_published && (
+                <span className="text-xs font-medium text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
+                  ✓ En ligne
+                </span>
+              )}
+            </div>
+
+            {/* Price setting */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-text mb-1.5">Prix</label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder={String(program.price ?? 0)}
+                    value={priceInput}
+                    onChange={e => setPriceInput(e.target.value)}
+                    className="w-full rounded-xl border border-border px-3 py-2 pr-8 text-sm text-text focus:outline-none focus:ring-2 focus:ring-brand-500/30"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted text-sm">€</span>
+                </div>
+                <button
+                  onClick={savePrice}
+                  disabled={savingPrice || priceInput === ''}
+                  className="rounded-xl bg-brand-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:opacity-50"
+                >
+                  {savingPrice ? '...' : 'Enregistrer'}
+                </button>
+              </div>
+              <p className="text-xs text-muted mt-1.5">
+                Prix actuel : {program.price === 0 ? 'Gratuit' : `${program.price}€`} · Entrez 0 pour gratuit
+              </p>
+            </div>
+
+            {/* Preview card */}
+            <div className="mb-4">
+              <p className="text-xs font-medium text-muted uppercase tracking-wide mb-2">Aperçu sur le marketplace</p>
+              <div className="rounded-xl border border-border overflow-hidden max-w-xs">
+                <div
+                  className="h-20 flex items-end px-3 pb-2"
+                  style={{ background: `linear-gradient(135deg, var(--color-brand-500), #06b6d4)` }}
+                >
+                  <div>
+                    <p className="text-xs font-bold text-white">{program.title}</p>
+                    <p className="text-[10px] text-white/70">{program.duration_weeks} semaines</p>
+                  </div>
+                  <div className="ml-auto text-xs font-bold text-white">
+                    {(program.price ?? 0) === 0 ? 'Gratuit' : `${program.price}€`}
+                  </div>
+                </div>
+                <div className="p-2.5 bg-white">
+                  {program.description && (
+                    <p className="text-[11px] text-muted line-clamp-2 mb-2">{program.description}</p>
+                  )}
+                  <div className="rounded-lg bg-brand-500 py-1.5 text-center text-xs font-bold text-white">
+                    {(program.price ?? 0) === 0 ? "S'inscrire" : `Acheter ${program.price}€`}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Publish toggle */}
+            <div className="flex gap-2">
+              <button
+                onClick={togglePublish}
+                className={`flex-1 rounded-xl py-2.5 text-sm font-semibold transition ${
+                  program.is_published
+                    ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    : 'bg-brand-500 text-white hover:bg-brand-600'
+                }`}
+              >
+                {program.is_published ? 'Dépublier du marketplace' : 'Publier sur le marketplace'}
+              </button>
+              {program.is_published && (
+                <a
+                  href={`/explore/programs/${id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-text transition hover:bg-surface"
+                >
+                  Voir
+                </a>
+              )}
+            </div>
+            {!program.is_published && (!program.program_workouts || program.program_workouts.length === 0) && (
+              <p className="mt-2 text-xs text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
+                ⚠️ Ajoutez au moins une séance avant de publier.
+              </p>
+            )}
           </div>
         )}
 
