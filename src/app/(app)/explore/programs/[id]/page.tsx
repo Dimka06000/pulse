@@ -29,6 +29,29 @@ interface Workout {
   workout_data: { exercises: Array<Record<string, unknown>> };
 }
 
+interface TargetEvent {
+  id: string;
+  name: string;
+  sport: string;
+  distance_km: number | null;
+  terrain_type: string | null;
+  location: string | null;
+  event_date: string | null;
+  elevation_m: number | null;
+}
+
+interface SimilarProgram {
+  id: string;
+  title: string;
+  sport: string;
+  level: string;
+  duration_weeks: number;
+  price: number;
+  cover_image_url: string | null;
+  coach_profiles: { display_name: string; avatar_url: string | null } | null;
+  program_enrollments?: Array<{ count: number }>;
+}
+
 interface Program {
   id: string;
   title: string;
@@ -42,6 +65,7 @@ interface Program {
   coach_profiles: { display_name: string; avatar_url: string | null } | null;
   program_workouts: Workout[];
   program_enrollments?: Array<{ count: number }>;
+  target_events?: TargetEvent | null;
 }
 
 interface Enrollment {
@@ -65,6 +89,7 @@ export default function ProgramDetailAthleteView() {
   const [pushingGarmin, setPushingGarmin] = useState(false);
   const [garminConnected, setGarminConnected] = useState(false);
   const [expandedWeek, setExpandedWeek] = useState<number | null>(1);
+  const [similarPrograms, setSimilarPrograms] = useState<SimilarProgram[]>([]);
 
   useEffect(() => {
     fetch(`/api/programs/${id}`)
@@ -101,6 +126,22 @@ export default function ProgramDetailAthleteView() {
       })
       .catch(() => {});
   }, []);
+
+  // Fetch similar programs
+  useEffect(() => {
+    if (!program) return;
+    const p = new URLSearchParams();
+    p.set('sport', program.sport);
+    p.set('limit', '6');
+    p.set('published', 'true');
+    fetch(`/api/programs?${p.toString()}`)
+      .then(r => r.ok ? r.json() : [])
+      .then((data: SimilarProgram[]) => {
+        const filtered = Array.isArray(data) ? data.filter((pr: SimilarProgram) => pr.id !== id) : [];
+        setSimilarPrograms(filtered.slice(0, 3));
+      })
+      .catch(() => {});
+  }, [program, id]);
 
   const handleEnroll = async () => {
     if (!userId) {
@@ -210,6 +251,36 @@ export default function ProgramDetailAthleteView() {
         </div>
 
         <div className="max-w-3xl mx-auto px-4 md:px-6 pt-6">
+          {/* Target Event Info */}
+          {program.target_events && (
+            <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">🎯</span>
+                <div className="flex-1">
+                  <h2 className="font-semibold text-amber-900 mb-1">Événement ciblé</h2>
+                  <p className="text-sm font-bold text-amber-800">{program.target_events.name}</p>
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-amber-700">
+                    {program.target_events.event_date && (
+                      <span>📅 {new Date(program.target_events.event_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                    )}
+                    {program.target_events.location && (
+                      <span>📍 {program.target_events.location}</span>
+                    )}
+                    {program.target_events.distance_km && (
+                      <span>📏 {program.target_events.distance_km} km</span>
+                    )}
+                    {program.target_events.elevation_m && (
+                      <span>⛰️ D+ {program.target_events.elevation_m} m</span>
+                    )}
+                    {program.target_events.terrain_type && (
+                      <span>🗺️ {program.target_events.terrain_type === 'road' ? 'Route' : program.target_events.terrain_type === 'trail' ? 'Trail' : program.target_events.terrain_type === 'mixed' ? 'Mixte' : program.target_events.terrain_type}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Coach info */}
           <div className="flex items-center gap-3 mb-6 p-4 rounded-2xl border border-border bg-white">
             <div className="h-12 w-12 rounded-full bg-gradient-to-br from-brand-500 to-cyan-500 flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -305,6 +376,51 @@ export default function ProgramDetailAthleteView() {
                         </div>
                       )}
                     </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Similar Programs */}
+          {similarPrograms.length > 0 && (
+            <div className="mb-6">
+              <h2 className="font-semibold text-text mb-3">Programmes similaires</h2>
+              <div className="space-y-2">
+                {similarPrograms.map(sp => {
+                  const spEmoji = SPORT_EMOJIS[sp.sport as Sport] || '⚡';
+                  const spGrad = SPORT_GRADIENTS[sp.sport as Sport] || SPORT_GRADIENTS['autre'];
+                  const spCoach = sp.coach_profiles?.display_name || 'Coach';
+                  const spEnroll = sp.program_enrollments?.[0]?.count ?? 0;
+                  return (
+                    <Link
+                      key={sp.id}
+                      href={`/explore/programs/${sp.id}`}
+                      className="flex items-center gap-3 p-3 rounded-2xl border border-border bg-white hover:shadow-md transition-all group"
+                    >
+                      <div
+                        className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
+                        style={{ background: sp.cover_image_url ? undefined : spGrad }}
+                      >
+                        {sp.cover_image_url ? (
+                          <img src={sp.cover_image_url} alt={sp.title} className="w-full h-full object-cover rounded-xl" />
+                        ) : (
+                          <span className="text-xl">{spEmoji}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-text truncate group-hover:text-brand-600 transition-colors">{sp.title}</p>
+                        <p className="text-xs text-muted truncate">{spCoach} · {sp.duration_weeks} sem. · {LEVEL_LABELS[sp.level] || sp.level}</p>
+                        {spEnroll > 0 && <p className="text-[10px] text-muted">{spEnroll} inscrits</p>}
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        {sp.price === 0 ? (
+                          <span className="text-xs font-bold text-emerald-600">Gratuit</span>
+                        ) : (
+                          <span className="text-xs font-bold text-text">{sp.price}€</span>
+                        )}
+                      </div>
+                    </Link>
                   );
                 })}
               </div>

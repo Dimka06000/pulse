@@ -53,6 +53,12 @@ export async function GET(req: NextRequest) {
       query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
     }
 
+    // Event-based search: find programs mentioning an event name
+    const event = params.get('event');
+    if (event) {
+      query = query.or(`title.ilike.%${event}%,description.ilike.%${event}%`);
+    }
+
     if (level && level !== 'all') {
       query = query.eq('level', level);
     }
