@@ -23,7 +23,8 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
       return NextResponse.json({ error: 'Seance introuvable' }, { status: 404 });
     }
 
-    const workoutData = (workout.workout_data as any) || { exercises: [] };
+    const raw = workout.workout_data;
+    const workoutData = typeof raw === 'string' ? JSON.parse(raw) : (raw || { exercises: [] });
     const exercises = workoutData.exercises || [];
 
     // Estimate total duration from exercises
