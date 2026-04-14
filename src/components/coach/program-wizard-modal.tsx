@@ -68,6 +68,7 @@ type FormData = {
   eventElevationM: number | null;
   eventTerrainType: 'road' | 'trail' | 'mixed' | null;
   eventLocation: string;
+  startDate: string; // YYYY-MM-DD, when program starts (default today)
 };
 
 interface ProgramWizardModalProps {
@@ -111,6 +112,7 @@ const DEFAULT_FORM: FormData = {
   eventElevationM: null,
   eventTerrainType: null,
   eventLocation: '',
+  startDate: new Date().toISOString().split('T')[0],
 };
 
 const LEVEL_MAP: Record<string, string> = {
@@ -172,12 +174,13 @@ export function ProgramWizardModal({
       ? `Preparation ${ev.name}`
       : `Programme ${ev.name}`;
 
-    // Auto-calculate weeks from event date
+    // Auto-calculate weeks from startDate to event date
+    const startDate = form.startDate || new Date().toISOString().split('T')[0];
     let weeks = form.duration_weeks;
     if (ev.date) {
       const eventDate = new Date(ev.date);
-      const today = new Date();
-      const diffMs = eventDate.getTime() - today.getTime();
+      const start = new Date(startDate);
+      const diffMs = eventDate.getTime() - start.getTime();
       weeks = Math.max(4, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 7)));
     }
 
@@ -193,9 +196,10 @@ export function ProgramWizardModal({
       sports: mappedSports.length > 0 ? mappedSports : prev.sports,
       title: autoTitle,
       duration_weeks: weeks,
+      startDate,
     }));
     setShowSuggestions(false);
-  }, [form.duration_weeks]);
+  }, [form.duration_weeks, form.startDate]);
 
   const handleCalibrate = useCallback(async () => {
     if (!effectiveAthleteId) return;
@@ -237,6 +241,7 @@ export function ProgramWizardModal({
         eventElevationM: null,
         eventTerrainType: null,
         eventLocation: '',
+        startDate: new Date().toISOString().split('T')[0],
       });
       setCustomWeeks(!WEEK_PRESETS.includes(editProgram.duration_weeks));
       setStep(0);
@@ -771,13 +776,43 @@ export function ProgramWizardModal({
                 </div>
               )}
 
+              {/* Start date */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Date de debut
+                </label>
+                <Input
+                  type="date"
+                  value={form.startDate}
+                  onChange={(e) => {
+                    const newStart = e.target.value;
+                    let weeks = form.duration_weeks;
+                    if (form.hasTargetEvent && form.eventDate && newStart) {
+                      const diffMs = new Date(form.eventDate).getTime() - new Date(newStart).getTime();
+                      weeks = Math.max(4, Math.ceil(diffMs / (7 * 86400000)));
+                    }
+                    updateForm({ startDate: newStart, duration_weeks: weeks });
+                  }}
+                />
+                {form.hasTargetEvent && form.eventDate && (
+                  <p className="text-xs text-gray-400 mt-1.5">
+                    {(() => {
+                      const start = new Date(form.startDate);
+                      const event = new Date(form.eventDate);
+                      const weeks = Math.max(0, Math.ceil((event.getTime() - start.getTime()) / (7 * 86400000)));
+                      return `${weeks} semaines entre le debut et l'evenement`;
+                    })()}
+                  </p>
+                )}
+              </div>
+
               {/* Duration with auto-calc info */}
               <div>
                 <label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Duree (semaines)
+                  Duree du programme (semaines)
                   {form.hasTargetEvent && form.eventDate && (
                     <span className="text-xs text-brand-500 ml-2">
-                      Auto-calcule depuis la date de l&apos;evenement
+                      Auto-calcule
                     </span>
                   )}
                 </label>
