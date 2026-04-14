@@ -150,6 +150,46 @@ export async function GET() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, 5);
 
+  // Today's program workout (for workout player)
+  let todayWorkout: any = null;
+  try {
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+    const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+
+    // Find program workouts scheduled today for programs the user is enrolled in
+    const { data: enrollments } = await db
+      .from('program_enrollments')
+      .select('program_id')
+      .eq('athlete_id', user.id)
+      .eq('status', 'active');
+
+    if (enrollments && enrollments.length > 0) {
+      const programIds = enrollments.map((e: any) => e.program_id);
+      const { data: todayPW } = await db
+        .from('program_workouts')
+        .select('id, title, week_number, day_number, workout_data, training_programs(title)')
+        .in('program_id', programIds)
+        .gte('scheduled_date', todayStart.split('T')[0])
+        .lte('scheduled_date', todayEnd.split('T')[0])
+        .neq('status', 'completed')
+        .limit(1)
+        .maybeSingle();
+
+      if (todayPW) {
+        const wd = (todayPW.workout_data as any) || { exercises: [] };
+        const hasExercises = wd.exercises && wd.exercises.length > 0;
+        todayWorkout = {
+          id: todayPW.id,
+          title: todayPW.title || (todayPW.training_programs as any)?.title || 'Seance du jour',
+          hasExercises,
+          exerciseCount: hasExercises ? wd.exercises.length : 0,
+        };
+      }
+    }
+  } catch {
+    // program tables may not exist
+  }
+
   // Active goals count (handle table not existing)
   let activeGoals = 0;
   try {
@@ -170,6 +210,7 @@ export async function GET() {
     totalTimeMinutes,
     activeGoals,
     nextSession,
+    todayWorkout,
     recentActivity: allRecent,
     stravaConnected,
   });

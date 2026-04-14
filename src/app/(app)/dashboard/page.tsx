@@ -302,38 +302,55 @@ export default function DashboardPage() {
         </div>
 
         {/* ── ENTRAINEMENT DU JOUR ── */}
-        {nextSession ? (
+        {(nextSession || s.todayWorkout) ? (
           <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm">
             {/* sport accent bar */}
             <div className="h-1 w-full" style={{ background: accentColor }} />
             <div className="p-5">
               <p className="text-[11px] uppercase tracking-widest text-gray-400 font-semibold">Entrainement du jour</p>
-              <h2 className="text-lg font-bold text-gray-900 mt-1">{nextSession.title}</h2>
+              <h2 className="text-lg font-bold text-gray-900 mt-1">
+                {s.todayWorkout?.title || nextSession?.title}
+              </h2>
               <div className="flex items-center gap-3 mt-2">
-                {nextSession.sport && (
+                {nextSession?.sport && !s.todayWorkout && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
                     {SPORT_EMOJIS[nextSession.sport as Sport] || '⚡'} {nextSession.sport}
                   </span>
                 )}
-                {nextSession.duration && (
+                {s.todayWorkout && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
+                    🏋️ {s.todayWorkout.exerciseCount} exercices
+                  </span>
+                )}
+                {nextSession?.duration && !s.todayWorkout && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
                     ⏱ {nextSession.duration} min
                   </span>
                 )}
-                {nextSession.coachName && (
+                {nextSession?.coachName && !s.todayWorkout && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600">
                     👤 {nextSession.coachName}
                   </span>
                 )}
               </div>
               <div className="mt-4">
-                <button
-                  className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-                  style={{ background: accentColor }}
-                  onClick={() => setShowModal(true)}
-                >
-                  Commencer
-                </button>
+                {s.todayWorkout?.hasExercises ? (
+                  <Link
+                    href={`/workout/${s.todayWorkout.id}`}
+                    className="inline-block rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                    style={{ background: accentColor }}
+                  >
+                    Commencer
+                  </Link>
+                ) : (
+                  <button
+                    className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+                    style={{ background: accentColor }}
+                    onClick={() => setShowModal(true)}
+                  >
+                    {s.todayWorkout ? 'Planifier' : 'Commencer'}
+                  </button>
+                )}
               </div>
             </div>
           </div>

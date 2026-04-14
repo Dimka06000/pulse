@@ -68,6 +68,12 @@ export default function ProgramDetailPage() {
   // Inline delete confirmation
   const [confirmDeleteProgram, setConfirmDeleteProgram] = useState(false);
 
+  // Share / Notify
+  const [notifyCount, setNotifyCount] = useState<number | null>(null);
+  const [notifying, setNotifying] = useState(false);
+  const [notified, setNotified] = useState(false);
+  const [showNotifyConfirm, setShowNotifyConfirm] = useState(false);
+
   // Marketplace panel
   const [showMarketplace, setShowMarketplace] = useState(false);
   const [priceInput, setPriceInput] = useState<string>('');
@@ -232,6 +238,57 @@ export default function ProgramDetailPage() {
       const newBlocks = await res.json();
       setBlocks(newBlocks);
       toast('success', 'Périodisation générée', `${newBlocks.length} blocs créés`);
+    }
+  }
+
+  async function handleShare() {
+    if (!program) return;
+    const link = `https://pulse-eight-sigma.vercel.app/explore/programs/${id}`;
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: program.title,
+          text: `Découvre mon programme : ${program.title}`,
+          url: link,
+        });
+        return;
+      } catch {
+        // User cancelled or share failed — fall through to clipboard
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(link);
+      toast('success', 'Lien copié !', 'Partagez-le avec vos athlètes');
+    } catch {
+      toast('error', 'Erreur', 'Impossible de copier le lien');
+    }
+  }
+
+  async function fetchNotifyCount() {
+    const res = await fetch(`/api/programs/${id}/notify`);
+    if (res.ok) {
+      const data = await res.json();
+      setNotifyCount(data.count ?? 0);
+    }
+  }
+
+  async function handleNotify() {
+    setNotifying(true);
+    try {
+      const res = await fetch(`/api/programs/${id}/notify`, { method: 'POST' });
+      if (res.ok) {
+        const data = await res.json();
+        toast('success', `${data.notified} athlètes notifiés !`, 'La notification a été envoyée');
+        setNotified(true);
+      } else {
+        const err = await res.json();
+        toast('error', 'Erreur', err.error || 'Échec de l\'envoi');
+      }
+    } catch {
+      toast('error', 'Erreur', 'Connexion impossible');
+    } finally {
+      setNotifying(false);
+      setShowNotifyConfirm(false);
     }
   }
 
@@ -418,6 +475,32 @@ export default function ProgramDetailPage() {
             </button>
 
             <button
+              onClick={handleShare}
+              className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:border-sky-400 hover:text-sky-600 transition-colors"
+            >
+              🔗 Partager
+            </button>
+
+            {program.is_published && (
+              <button
+                onClick={() => {
+                  if (!notified) {
+                    fetchNotifyCount();
+                    setShowNotifyConfirm(true);
+                  }
+                }}
+                disabled={notified || notifying}
+                className={`flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border transition-colors ${
+                  notified
+                    ? 'bg-emerald-50 text-emerald-600 border-emerald-200 cursor-default'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-violet-400 hover:text-violet-600'
+                }`}
+              >
+                {notified ? '✓ Notification envoyée' : '🔔 Notifier mes athlètes'}
+              </button>
+            )}
+
+            <button
               onClick={() => setShowAssign(!showAssign)}
               className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border border-gray-200 bg-white text-gray-600 hover:border-gray-400 transition-colors"
             >
@@ -489,6 +572,30 @@ export default function ProgramDetailPage() {
                   </select>
                   <Button size="sm" onClick={handleAssign}>Assigner</Button>
                 </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Notify confirm panel */}
+        {showNotifyConfirm && (
+          <div className="mb-4 rounded-2xl border border-border bg-white p-5">
+            <h4 className="mb-2 font-semibold text-text">🔔 Notifier vos athlètes</h4>
+            <p className="text-sm text-muted mb-4">
+              {notifyCount === null
+                ? 'Chargement...'
+                : notifyCount === 0
+                  ? 'Aucun athlète à notifier pour le moment.'
+                  : `Envoyer une notification à ${notifyCount} athlète${notifyCount > 1 ? 's' : ''} ?`}
+            </p>
+            <div className="flex gap-2">
+              <Button size="sm" variant="ghost" onClick={() => setShowNotifyConfirm(false)}>
+                Annuler
+              </Button>
+              {notifyCount !== null && notifyCount > 0 && (
+                <Button size="sm" disabled={notifying} onClick={handleNotify}>
+                  {notifying ? 'Envoi...' : `Envoyer à ${notifyCount} athlète${notifyCount > 1 ? 's' : ''}`}
+                </Button>
               )}
             </div>
           </div>
