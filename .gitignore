@@ -3,3 +3,12 @@
 .next/
 node_modules/
 .env*.local
+
+# Build artifacts
+tsconfig.tsbuildinfo
+*/dist/
+
+# Test artifacts (regenerated on demand)
+e2e/screenshots/
+test-results/
+playwright-report/
