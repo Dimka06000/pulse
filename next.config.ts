@@ -2,6 +2,11 @@ import type { NextConfig } from 'next';
 import path from 'path';
 
 const config: NextConfig = {
+  // Self-contained server bundle for the sovereign cluster: Next traces only the
+  // files actually reached and emits .next/standalone, so the runtime image
+  // carries no node_modules of its own. Harmless anywhere else — `next start`
+  // and `next dev` ignore it.
+  output: 'standalone',
   transpilePackages: ['@oikos/coaching'],
   typescript: {
     ignoreBuildErrors: true,

@@ -1,0 +1,31 @@
+# VCS (huge, never needed in the image)
+.git
+.github
+
+# deps + build artifacts (rebuilt inside the image)
+node_modules
+.next
+out
+coaching-lib/dist
+tsconfig.tsbuildinfo
+
+# local env / secrets — NEVER copy into the image.
+# The build reads its server secrets from a BuildKit secret mount instead.
+.env
+.env.*
+!.env.local.example
+*.crt
+*.key
+*.pem
+
+# test + tooling output (e2e/screenshots alone is tens of MB of PNGs)
+e2e/screenshots
+playwright-report
+test-results
+__tests__
+coverage
+
+# editor / OS noise
+.vscode
+.idea
+.DS_Store
